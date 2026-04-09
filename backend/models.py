@@ -16,7 +16,7 @@ class User(db.Model):
     role = db.Column(db.Enum('admin', 'doctor', 'patient', name='user_role'), nullable=False, default='patient')
     full_name = db.Column(db.String(200), nullable=False)
     phone = db.Column(db.String(20), default='')
-    avatar_url = db.Column(db.Text(length=4294967295), nullable=True)   # base64 data-URI or external URL
+    avatar_url = db.Column(db.Text, nullable=True)   # base64 data-URI or external URL
     created_at = db.Column(db.DateTime, default=_kenya_now)
 
     # Relationships
@@ -47,14 +47,14 @@ class Patient(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
     name = db.Column(db.String(200), nullable=False)
     age = db.Column(db.Integer, nullable=False)
-    gender = db.Column(db.Enum('Male', 'Female', name='gender_type'), nullable=False)
-    diabetes_type = db.Column(db.Enum('Type 1', 'Type 2', 'Gestational', name='diabetes_type'), nullable=False)
+    gender = db.Column(db.Enum('Male', 'Female', name='gender_enum'), nullable=False)
+    diabetes_type = db.Column(db.Enum('Type 1', 'Type 2', 'Gestational', name='diabetes_type_enum'), nullable=False)
     phone = db.Column(db.String(20), default='')
     email = db.Column(db.String(255), default='')
     blood_sugar = db.Column(db.Numeric(6, 2), default=0)
     hba1c = db.Column(db.Numeric(4, 2), default=0)
     adherence_rate = db.Column(db.Numeric(5, 2), default=0)
-    status = db.Column(db.Enum('stable', 'warning', 'critical', name='patient_status'), default='stable')
+    status = db.Column(db.Enum('stable', 'warning', 'critical', name='patient_status_enum'), default='stable')
     last_visit = db.Column(db.Date, nullable=True)
     next_visit = db.Column(db.Date, nullable=True)
     assigned_doctor_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
@@ -131,7 +131,7 @@ class Appointment(db.Model):
     doctor_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
     appointment_date = db.Column(db.DateTime, nullable=False)
     type = db.Column(db.String(100), default='Follow-up')
-    status = db.Column(db.Enum('scheduled', 'completed', 'cancelled', 'requested', 'missed'), default='scheduled')
+    status = db.Column(db.Enum('scheduled', 'completed', 'cancelled', 'requested', 'missed', name='appointment_status_enum'), default='scheduled')
     notes = db.Column(db.Text, default='')
     created_at = db.Column(db.DateTime, default=_kenya_now)
 
@@ -269,8 +269,8 @@ class DashboardFeature(db.Model):
     id          = db.Column(db.Integer, primary_key=True, autoincrement=True)
     title       = db.Column(db.String(200), nullable=False, unique=True)
     description = db.Column(db.String(500), default='')
-    type        = db.Column(db.Enum('stat', 'chart', 'list', 'alert', name='feature_type'), nullable=False, default='stat')
-    target_role = db.Column(db.Enum('doctor', 'patient', name='feature_target_role'), nullable=False)
+    type        = db.Column(db.Enum('stat', 'chart', 'list', 'alert', name='feature_type_enum'), nullable=False, default='stat')
+    target_role = db.Column(db.Enum('doctor', 'patient', name='feature_target_role_enum'), nullable=False)
     enabled     = db.Column(db.Boolean, default=True)
     value       = db.Column(db.String(100), default='')
     unit        = db.Column(db.String(50), default='')
@@ -301,7 +301,7 @@ class SmsLog(db.Model):
     recipient_role = db.Column(db.String(20),  nullable=True)
     message      = db.Column(db.Text, nullable=False)
     category     = db.Column(db.String(100), default='general')
-    status       = db.Column(db.Enum('sent', 'failed', 'disabled', name='sms_status'), default='sent')
+    status       = db.Column(db.Enum('sent', 'failed', 'disabled', name='sms_status_enum'), default='sent')
     error        = db.Column(db.Text, nullable=True)
     created_at   = db.Column(db.DateTime, default=_kenya_now)
 

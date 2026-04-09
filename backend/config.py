@@ -7,19 +7,19 @@ load_dotenv()
 
 class Config:
     # localhost  config
-    MYSQL_HOST = os.getenv('MYSQL_HOST', 'localhost')
-    MYSQL_USER = os.getenv('MYSQL_USER', 'root')
-    MYSQL_PASSWORD = os.getenv('MYSQL_PASSWORD', '@Kenrotich89')
-    MYSQL_DB = os.getenv('MYSQL_DB', 'diabecare')
-    JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', '178b9c9e-1a2b-4c3d-8e7f-9a0b1c2d3e4f')
-    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=24)
-
-    # PostgreSQL (Render provides DATABASE_URL)
-    # DATABASE_URL = os.getenv('DATABASE_URL')
-    # SQLALCHEMY_DATABASE_URI = DATABASE_URL
-    # SQLALCHEMY_TRACK_MODIFICATIONS = False
+    # MYSQL_HOST = os.getenv('MYSQL_HOST', 'localhost')
+    # MYSQL_USER = os.getenv('MYSQL_USER', 'root')
+    # MYSQL_PASSWORD = os.getenv('MYSQL_PASSWORD', '@Kenrotich89')
+    # MYSQL_DB = os.getenv('MYSQL_DB', 'diabecare')
     # JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', '178b9c9e-1a2b-4c3d-8e7f-9a0b1c2d3e4f')
     # JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=24)
+
+    # PostgreSQL (Render provides DATABASE_URL)
+    DATABASE_URL = os.getenv('DATABASE_URL')
+    SQLALCHEMY_DATABASE_URI = DATABASE_URL
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', '178b9c9e-1a2b-4c3d-8e7f-9a0b1c2d3e4f')
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=24)
 
     # Africa's Talking SMS
     # AT_USERNAME = os.getenv('AT_USERNAME', 'Diabe')

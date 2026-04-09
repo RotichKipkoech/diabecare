@@ -4,6 +4,7 @@ from extensions import db, migrate, jwt
 from flask_cors import CORS
 from flask_swagger_ui import get_swaggerui_blueprint
 from scheduler import start_scheduler
+import os
 
 
 def create_app():
@@ -11,11 +12,19 @@ def create_app():
 
     # Database config
     from urllib.parse import quote_plus
-    password = quote_plus(Config.MYSQL_PASSWORD)
-    app.config['SQLALCHEMY_DATABASE_URI'] = (
-        f"mysql+mysqlconnector://{Config.MYSQL_USER}:{password}"
-        f"@{Config.MYSQL_HOST}/{Config.MYSQL_DB}"
-    )
+    # password = quote_plus(Config.MYSQL_PASSWORD)
+    # app.config['SQLALCHEMY_DATABASE_URI'] = (
+    #     f"mysql+mysqlconnector://{Config.MYSQL_USER}:{password}"
+    #     f"@{Config.MYSQL_HOST}/{Config.MYSQL_DB}"
+    # )
+
+    database_url = os.getenv("DATABASE_URL")
+
+# Fix for postgres URL (Render uses postgres:// but SQLAlchemy needs postgresql://)
+    if database_url and database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
+
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['JWT_SECRET_KEY'] = Config.JWT_SECRET_KEY
     app.config['JWT_ACCESS_TOKEN_EXPIRES'] = Config.JWT_ACCESS_TOKEN_EXPIRES
