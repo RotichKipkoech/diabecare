@@ -289,7 +289,7 @@ def sms_account_created(full_name: str, phone: str, username: str, password: str
         f"Welcome to DiabeCare! Your {role_label} account has been created.\n"
         f"Username: {username}\n"
         f"Password: {password}\n"
-        f"Login at: http://localhost:8080\n"
+        f"Login at: https://daibecare.netlify.app/\n"
         f"Please change your password after first login. - DiabeCare"
     )
     send_sms(phone, message)
