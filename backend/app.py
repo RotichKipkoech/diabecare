@@ -12,7 +12,7 @@ def create_app():
     app = Flask(__name__)
     # Tell Flask it's behind Render's reverse proxy.
     # x_for=1 means trust 1 proxy hop for the real IP in X-Forwarded-For.
-    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=2, x_proto=2, x_host=1)
 
     # Database config
     from urllib.parse import quote_plus

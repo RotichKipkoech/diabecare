@@ -1,16 +1,19 @@
-from datetime import datetime, date, timezone
+from datetime import datetime, date
 from zoneinfo import ZoneInfo
 from extensions import db
 
-def _utcnow():
-    """Return current time as a naive UTC datetime for PostgreSQL storage.
-    The frontend displays times in the user's local timezone automatically.
-    Nairobi time = UTC+3, so add 3 hours when displaying if needed."""
-    return datetime.now(timezone.utc).replace(tzinfo=None)
-
-# Keep for any code that still needs a Kenya-local datetime (scheduler, etc.)
 def _kenya_now():
-    return datetime.now(ZoneInfo("Africa/Nairobi"))
+    """Return current Kenya time (EAT = UTC+3) as a naive datetime.
+
+    Render servers run on UTC. Storing naive Kenya-local datetimes means
+    every timestamp displayed to users is already in the correct timezone
+    without any frontend conversion.  All scheduler jobs already use
+    NAIROBI = ZoneInfo("Africa/Nairobi") so this stays consistent.
+    """
+    return datetime.now(ZoneInfo("Africa/Nairobi")).replace(tzinfo=None)
+
+# Alias kept so any remaining references to _utcnow still work
+_utcnow = _kenya_now
 
 
 class User(db.Model):
