@@ -9,7 +9,8 @@ import {
   Save, Pencil, Loader2, Camera, X, Upload, Stethoscope,
 } from 'lucide-react';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+// const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || "https://diabecare.onrender.com/api";
 async function uploadAvatar(avatarDataUri: string | null): Promise<void> {
   const token = localStorage.getItem('access_token');
   const res = await fetch(`${API_URL}/auth/avatar`, {

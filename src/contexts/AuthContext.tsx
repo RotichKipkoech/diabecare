@@ -30,7 +30,9 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+// const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api"; 
+
+const API_URL = import.meta.env.VITE_API_URL || "https://diabecare.onrender.com/api";
 
 // ── Constants ────────────────────────────────────────────────────────────────
 const INACTIVITY_TIMEOUT = 10 * 60 * 1000;   // 10 minutes → auto logout

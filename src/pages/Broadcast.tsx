@@ -10,7 +10,9 @@ import {
   Filter, User, Stethoscope, Shield,
 } from 'lucide-react';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+// const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
+const API_URL = import.meta.env.VITE_API_URL || "https://diabecare.onrender.com/api";
 
 function authHeaders(): HeadersInit {
   const token = localStorage.getItem('access_token');
