@@ -52,7 +52,9 @@ const roleBadge = (role: string) => {
 };
 
 const timeAgo = (dateStr: string): string => {
-  const d = new Date(dateStr);
+  // Append 'Z' so JS knows this is UTC (PostgreSQL returns naive UTC strings)
+  const utcStr = dateStr.endsWith('Z') ? dateStr : dateStr + 'Z';
+  const d = new Date(utcStr);
   const now = Date.now();
   const diff = now - d.getTime();
   const m = Math.floor(diff / 60000);
@@ -116,7 +118,8 @@ const ActivityLog = () => {
   // Group by day
   const groups: Record<string, LogEntry[]> = {};
   paginated.forEach(l => {
-    const day = new Date(l.created_at).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+    const utcStr = l.created_at.endsWith('Z') ? l.created_at : l.created_at + 'Z';
+    const day = new Date(utcStr).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
     if (!groups[day]) groups[day] = [];
     groups[day].push(l);
   });
@@ -258,7 +261,7 @@ const ActivityLog = () => {
                               <div>
                                 <p className="text-muted-foreground font-semibold mb-0.5">Timestamp</p>
                                 <p className="font-bold text-foreground">
-                                  {new Date(log.created_at).toLocaleString('en-US', {
+                                  {new Date(log.created_at.endsWith('Z') ? log.created_at : log.created_at + 'Z').toLocaleString('en-US', {
                                     month: 'short', day: 'numeric', year: 'numeric',
                                     hour: 'numeric', minute: '2-digit',
                                   })}

@@ -1,7 +1,14 @@
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 from zoneinfo import ZoneInfo
 from extensions import db
 
+def _utcnow():
+    """Return current time as a naive UTC datetime for PostgreSQL storage.
+    The frontend displays times in the user's local timezone automatically.
+    Nairobi time = UTC+3, so add 3 hours when displaying if needed."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
+# Keep for any code that still needs a Kenya-local datetime (scheduler, etc.)
 def _kenya_now():
     return datetime.now(ZoneInfo("Africa/Nairobi"))
 
@@ -17,7 +24,7 @@ class User(db.Model):
     full_name = db.Column(db.String(200), nullable=False)
     phone = db.Column(db.String(20), default='')
     avatar_url = db.Column(db.Text, nullable=True)   # base64 data-URI or external URL
-    created_at = db.Column(db.DateTime, default=_kenya_now)
+    created_at = db.Column(db.DateTime, default=_utcnow)
 
     # Relationships
     patient_record = db.relationship('Patient', backref='user', foreign_keys='Patient.user_id', lazy=True)
@@ -60,7 +67,7 @@ class Patient(db.Model):
     assigned_doctor_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
     
     assigned_doctor = db.relationship('User',foreign_keys=[assigned_doctor_id],lazy='joined')
-    created_at = db.Column(db.DateTime, default=_kenya_now)
+    created_at = db.Column(db.DateTime, default=_utcnow)
 
     # Relationships
     medications = db.relationship('Medication', backref='patient', cascade='all, delete-orphan', lazy=True)
@@ -104,7 +111,7 @@ class Medication(db.Model):
     refill_date = db.Column(db.Date, nullable=True)
     prescribed_by = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
     completed = db.Column(db.Boolean, default=False) 
-    created_at = db.Column(db.DateTime, default=_kenya_now)
+    created_at = db.Column(db.DateTime, default=_utcnow)
 
     logs = db.relationship('MedicationLog', backref='medication', cascade='all, delete-orphan', lazy=True)
 
@@ -133,7 +140,7 @@ class Appointment(db.Model):
     type = db.Column(db.String(100), default='Follow-up')
     status = db.Column(db.Enum('scheduled', 'completed', 'cancelled', 'requested', 'missed', name='appointment_status_enum'), default='scheduled')
     notes = db.Column(db.Text, default='')
-    created_at = db.Column(db.DateTime, default=_kenya_now)
+    created_at = db.Column(db.DateTime, default=_utcnow)
 
     # Relationship to doctor
     doctor = db.relationship('User', foreign_keys=[doctor_id], lazy=True)
@@ -162,7 +169,7 @@ class Notification(db.Model):
     message = db.Column(db.Text, nullable=False)
     type = db.Column(db.String(50), default="info") 
     read = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=_kenya_now)
+    created_at = db.Column(db.DateTime, default=_utcnow)
 
     user = db.relationship("User", backref="notifications")
 
@@ -185,7 +192,7 @@ class MedicationLog(db.Model):
     patient_id = db.Column(db.Integer, db.ForeignKey('patients.id', ondelete='CASCADE'), nullable=False)
     date = db.Column(db.Date, nullable=False)
     taken = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=_kenya_now)
+    created_at = db.Column(db.DateTime, default=_utcnow)
 
     patient = db.relationship('Patient', backref='medication_logs')
 
@@ -208,7 +215,7 @@ class AuditLog(db.Model):
     target = db.Column(db.String(200), default='')
     description = db.Column(db.Text, default='')
     ip_address = db.Column(db.String(50), nullable=True)
-    created_at = db.Column(db.DateTime, default=_kenya_now)
+    created_at = db.Column(db.DateTime, default=_utcnow)
 
     user = db.relationship('User', backref='audit_logs')
 
@@ -231,7 +238,7 @@ class SystemConfig(db.Model):
     id    = db.Column(db.Integer, primary_key=True, autoincrement=True)
     key   = db.Column(db.String(100), unique=True, nullable=False)
     value = db.Column(db.Text, nullable=True)
-    updated_at = db.Column(db.DateTime, default=_kenya_now, onupdate=_kenya_now)
+    updated_at = db.Column(db.DateTime, default=_utcnow, onupdate=_utcnow)
 
     @staticmethod
     def get(key: str, default=None):
@@ -254,7 +261,7 @@ class TokenBlocklist(db.Model):
 
     id         = db.Column(db.Integer, primary_key=True, autoincrement=True)
     jti        = db.Column(db.String(36), nullable=False, unique=True, index=True)  # JWT ID
-    created_at = db.Column(db.DateTime, default=_kenya_now)
+    created_at = db.Column(db.DateTime, default=_utcnow)
 
     @staticmethod
     def is_blocked(jti: str) -> bool:
@@ -275,7 +282,7 @@ class DashboardFeature(db.Model):
     value       = db.Column(db.String(100), default='')
     unit        = db.Column(db.String(50), default='')
     is_builtin  = db.Column(db.Boolean, default=False)  
-    created_at  = db.Column(db.DateTime, default=_kenya_now)
+    created_at  = db.Column(db.DateTime, default=_utcnow)
 
     def to_dict(self):
         return {
@@ -303,7 +310,7 @@ class SmsLog(db.Model):
     category     = db.Column(db.String(100), default='general')
     status       = db.Column(db.Enum('sent', 'failed', 'disabled', name='sms_status_enum'), default='sent')
     error        = db.Column(db.Text, nullable=True)
-    created_at   = db.Column(db.DateTime, default=_kenya_now)
+    created_at   = db.Column(db.DateTime, default=_utcnow)
 
     def to_dict(self):
         return {

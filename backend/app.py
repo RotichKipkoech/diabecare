@@ -4,11 +4,15 @@ from extensions import db, migrate, jwt
 from flask_cors import CORS
 from flask_swagger_ui import get_swaggerui_blueprint
 from scheduler import start_scheduler
+from werkzeug.middleware.proxy_fix import ProxyFix
 import os
 
 
 def create_app():
     app = Flask(__name__)
+    # Tell Flask it's behind Render's reverse proxy.
+    # x_for=1 means trust 1 proxy hop for the real IP in X-Forwarded-For.
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
     # Database config
     from urllib.parse import quote_plus
