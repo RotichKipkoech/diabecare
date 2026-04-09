@@ -1,0 +1,1758 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "DiabeCare API",
+    "description": "DiabeCare \u2014 Diabetic Patient Medication Follow-Up System API",
+    "version": "2.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://your-production-domain.com/api",
+      "description": "Production"
+    },
+    {
+      "url": "http://localhost:5000/api",
+      "description": "Local dev"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ],
+  "paths": {
+    "/auth/login": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Login",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "username",
+                  "password"
+                ],
+                "properties": {
+                  "username": {
+                    "type": "string",
+                    "example": "admin"
+                  },
+                  "password": {
+                    "type": "string",
+                    "example": "admin123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful \u2014 returns JWT token and user object"
+          },
+          "401": {
+            "description": "Invalid credentials"
+          }
+        }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Get current authenticated user",
+        "responses": {
+          "200": {
+            "description": "Current user object"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        }
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Register a new user (admin only)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "username",
+                  "email",
+                  "password",
+                  "role",
+                  "full_name"
+                ],
+                "properties": {
+                  "username": {
+                    "type": "string",
+                    "example": "jdoe"
+                  },
+                  "email": {
+                    "type": "string",
+                    "example": "jdoe@email.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "example": "pass1234"
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "admin",
+                      "doctor",
+                      "patient"
+                    ]
+                  },
+                  "full_name": {
+                    "type": "string",
+                    "example": "John Doe"
+                  },
+                  "phone": {
+                    "type": "string",
+                    "example": "+254700000000"
+                  },
+                  "age": {
+                    "type": "integer",
+                    "description": "Required when role=patient"
+                  },
+                  "gender": {
+                    "type": "string",
+                    "enum": [
+                      "Male",
+                      "Female"
+                    ]
+                  },
+                  "diabetes_type": {
+                    "type": "string",
+                    "enum": [
+                      "Type 1",
+                      "Type 2",
+                      "Gestational"
+                    ]
+                  },
+                  "blood_sugar": {
+                    "type": "number"
+                  },
+                  "hba1c": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User created successfully"
+          },
+          "400": {
+            "description": "Missing required fields"
+          },
+          "403": {
+            "description": "Admin access required"
+          },
+          "409": {
+            "description": "Username or email already exists"
+          }
+        }
+      }
+    },
+    "/auth/users": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "List all users (admin only)",
+        "responses": {
+          "200": {
+            "description": "Array of user objects"
+          },
+          "403": {
+            "description": "Admin access required"
+          }
+        }
+      }
+    },
+    "/auth/users/{user_id}": {
+      "put": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Update a user (admin only)",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "full_name": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "phone": {
+                    "type": "string"
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "admin",
+                      "doctor",
+                      "patient"
+                    ]
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User updated"
+          },
+          "403": {
+            "description": "Admin access required"
+          },
+          "404": {
+            "description": "User not found"
+          },
+          "409": {
+            "description": "Username or email conflict"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Delete a user (admin only)",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User deleted"
+          },
+          "400": {
+            "description": "Cannot delete self or last admin"
+          },
+          "403": {
+            "description": "Admin access required"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        }
+      }
+    },
+    "/auth/change-password": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Change own password",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "current_password",
+                  "new_password"
+                ],
+                "properties": {
+                  "current_password": {
+                    "type": "string"
+                  },
+                  "new_password": {
+                    "type": "string",
+                    "description": "Minimum 8 characters"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password changed"
+          },
+          "400": {
+            "description": "Missing fields or too short"
+          },
+          "401": {
+            "description": "Current password incorrect"
+          }
+        }
+      }
+    },
+    "/auth/profile": {
+      "put": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Update own profile (full_name, email, phone)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "full_name": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "phone": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Profile updated \u2014 returns updated user object"
+          }
+        }
+      }
+    },
+    "/auth/avatar": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Upload or remove profile avatar (base64 data-URI)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "avatar_url": {
+                    "type": "string",
+                    "description": "Base64 data-URI (e.g. data:image/png;base64,...). Pass empty string to remove.",
+                    "example": "data:image/jpeg;base64,/9j/4AAQ..."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Avatar updated \u2014 returns avatar_url"
+          },
+          "400": {
+            "description": "Invalid format"
+          },
+          "413": {
+            "description": "Image too large (max ~2 MB)"
+          }
+        }
+      }
+    },
+    "/auth/activity-log": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Get audit/activity log (admin only) \u2014 last 200 entries",
+        "responses": {
+          "200": {
+            "description": "Array of audit log entries"
+          },
+          "403": {
+            "description": "Admin access required"
+          }
+        }
+      }
+    },
+    "/patients/": {
+      "get": {
+        "tags": [
+          "Patients"
+        ],
+        "summary": "List patients \u2014 admins see all, doctors see their assigned patients, patients see only themselves",
+        "responses": {
+          "200": {
+            "description": "Array of patient objects"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Patients"
+        ],
+        "summary": "Create patient record (admin/doctor)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "username",
+                  "password",
+                  "age",
+                  "gender",
+                  "diabetes_type",
+                  "email"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "age": {
+                    "type": "integer"
+                  },
+                  "gender": {
+                    "type": "string",
+                    "enum": [
+                      "Male",
+                      "Female"
+                    ]
+                  },
+                  "diabetes_type": {
+                    "type": "string",
+                    "enum": [
+                      "Type 1",
+                      "Type 2",
+                      "Gestational"
+                    ]
+                  },
+                  "phone": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string",
+                    "example": "jdoe@email.com"
+                  },
+                  "blood_sugar": {
+                    "type": "number"
+                  },
+                  "hba1c": {
+                    "type": "number"
+                  },
+                  "assigned_doctor_id": {
+                    "type": "integer"
+                  },
+                  "username": {
+                    "type": "string",
+                    "example": "jdoe"
+                  },
+                  "password": {
+                    "type": "string",
+                    "example": "pass1234"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Patient created"
+          },
+          "403": {
+            "description": "Admin/doctor access required"
+          }
+        }
+      }
+    },
+    "/patients/{patient_id}": {
+      "get": {
+        "tags": [
+          "Patients"
+        ],
+        "summary": "Get single patient (includes medications)",
+        "parameters": [
+          {
+            "name": "patient_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Patient object with medications array"
+          },
+          "404": {
+            "description": "Patient not found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Patients"
+        ],
+        "summary": "Update patient record",
+        "parameters": [
+          {
+            "name": "patient_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "age": {
+                    "type": "integer"
+                  },
+                  "gender": {
+                    "type": "string",
+                    "enum": [
+                      "Male",
+                      "Female"
+                    ]
+                  },
+                  "diabetes_type": {
+                    "type": "string",
+                    "enum": [
+                      "Type 1",
+                      "Type 2",
+                      "Gestational"
+                    ]
+                  },
+                  "phone": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "blood_sugar": {
+                    "type": "number"
+                  },
+                  "hba1c": {
+                    "type": "number"
+                  },
+                  "last_visit": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "next_visit": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "username": {
+                    "type": "string",
+                    "description": "Updates the linked user account username"
+                  },
+                  "password": {
+                    "type": "string",
+                    "description": "Updates the linked user account password"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Patient updated"
+          },
+          "404": {
+            "description": "Patient not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Patients"
+        ],
+        "summary": "Delete patient (admin only)",
+        "parameters": [
+          {
+            "name": "patient_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Patient deleted"
+          },
+          "403": {
+            "description": "Admin access required"
+          },
+          "404": {
+            "description": "Patient not found"
+          }
+        }
+      }
+    },
+    "/medications/patientf/{patient_id}": {
+      "get": {
+        "tags": [
+          "Medications"
+        ],
+        "summary": "List all medications for a patient (includes taken_today field; completed medications are included \u2014 filter client-side if needed)",
+        "parameters": [
+          {
+            "name": "patient_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of medication objects with taken_today field"
+          }
+        }
+      }
+    },
+    "/medications/": {
+      "post": {
+        "tags": [
+          "Medications"
+        ],
+        "summary": "Prescribe a medication (admin/doctor)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "patient_id",
+                  "name",
+                  "dosage",
+                  "frequency"
+                ],
+                "properties": {
+                  "patient_id": {
+                    "type": "integer"
+                  },
+                  "name": {
+                    "type": "string",
+                    "example": "Metformin"
+                  },
+                  "dosage": {
+                    "type": "string",
+                    "example": "500mg"
+                  },
+                  "frequency": {
+                    "type": "string",
+                    "example": "Twice daily"
+                  },
+                  "time": {
+                    "type": "string",
+                    "example": "08:00"
+                  },
+                  "refill_date": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "2025-08-01"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Medication prescribed"
+          },
+          "403": {
+            "description": "Admin/doctor access required"
+          },
+          "404": {
+            "description": "Patient not found"
+          }
+        }
+      }
+    },
+    "/medications/{med_id}": {
+      "put": {
+        "tags": [
+          "Medications"
+        ],
+        "summary": "Update medication \u2014 update refill date OR mark as completed (admin/doctor)",
+        "parameters": [
+          {
+            "name": "med_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "refill_date": {
+                    "type": "string",
+                    "format": "date",
+                    "nullable": true,
+                    "description": "Pass null or empty string to clear the refill date",
+                    "example": "2025-09-15"
+                  },
+                  "completed": {
+                    "type": "boolean",
+                    "description": "Pass true to mark the medication course as completed (irreversible)",
+                    "example": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Medication updated \u2014 returns updated medication object"
+          },
+          "400": {
+            "description": "Invalid refill_date format"
+          },
+          "403": {
+            "description": "Admin/doctor access required"
+          },
+          "404": {
+            "description": "Medication not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Medications"
+        ],
+        "summary": "Delete medication (admin/doctor)",
+        "parameters": [
+          {
+            "name": "med_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Medication deleted"
+          },
+          "403": {
+            "description": "Admin/doctor access required"
+          },
+          "404": {
+            "description": "Medication not found"
+          }
+        }
+      }
+    },
+    "/medications/{med_id}/toggle": {
+      "put": {
+        "tags": [
+          "Medications"
+        ],
+        "summary": "Mark medication taken or missed for today (patient only)",
+        "parameters": [
+          {
+            "name": "med_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "taken"
+                ],
+                "properties": {
+                  "taken": {
+                    "type": "boolean",
+                    "example": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Returns taken_today and updated adherence_rate"
+          },
+          "403": {
+            "description": "Patient access only"
+          },
+          "404": {
+            "description": "Medication not found"
+          }
+        }
+      }
+    },
+    "/appointments/": {
+      "get": {
+        "tags": [
+          "Appointments"
+        ],
+        "summary": "List appointments \u2014 role-scoped (admins all, doctors their own, patients their own)",
+        "responses": {
+          "200": {
+            "description": "Array of appointment objects"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Appointments"
+        ],
+        "summary": "Schedule an appointment (admin/doctor)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "patient_id",
+                  "appointment_date"
+                ],
+                "properties": {
+                  "patient_id": {
+                    "type": "integer"
+                  },
+                  "doctor_id": {
+                    "type": "integer"
+                  },
+                  "appointment_date": {
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2025-07-20T09:00:00"
+                  },
+                  "type": {
+                    "type": "string",
+                    "example": "Follow-up"
+                  },
+                  "notes": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Appointment scheduled"
+          },
+          "403": {
+            "description": "Admin/doctor access required"
+          }
+        }
+      }
+    },
+    "/appointments/request": {
+      "post": {
+        "tags": [
+          "Appointments"
+        ],
+        "summary": "Patient requests an appointment (patient only)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "requested_date",
+                  "type"
+                ],
+                "properties": {
+                  "requested_date": {
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2025-08-05T10:00:00"
+                  },
+                  "type": {
+                    "type": "string",
+                    "example": "Routine Check"
+                  },
+                  "notes": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Appointment request submitted with status=requested"
+          },
+          "403": {
+            "description": "Patient access only"
+          }
+        }
+      }
+    },
+    "/appointments/{appt_id}": {
+      "put": {
+        "tags": [
+          "Appointments"
+        ],
+        "summary": "Update appointment (admin/doctor)",
+        "parameters": [
+          {
+            "name": "appt_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "appointment_date": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "type": {
+                    "type": "string"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "scheduled",
+                      "completed",
+                      "cancelled",
+                      "requested",
+                      "missed"
+                    ]
+                  },
+                  "notes": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Appointment updated"
+          },
+          "404": {
+            "description": "Appointment not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Appointments"
+        ],
+        "summary": "Delete appointment (admin/doctor)",
+        "parameters": [
+          {
+            "name": "appt_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Appointment deleted"
+          },
+          "403": {
+            "description": "Admin/doctor access required"
+          },
+          "404": {
+            "description": "Appointment not found"
+          }
+        }
+      }
+    },
+    "/notifications/": {
+      "get": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Get all notifications for the current user (ordered newest first)",
+        "responses": {
+          "200": {
+            "description": "Array of notification objects ordered by newest first"
+          }
+        }
+      }
+    },
+    "/notifications/{note_id}/read": {
+      "put": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Mark a single notification as read",
+        "parameters": [
+          {
+            "name": "note_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Marked as read"
+          },
+          "404": {
+            "description": "Notification not found"
+          }
+        }
+      }
+    },
+    "/notifications/mark-all-read": {
+      "put": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Mark all notifications as read for the current user",
+        "responses": {
+          "200": {
+            "description": "All notifications marked as read"
+          }
+        }
+      }
+    },
+    "/notifications/{note_id}": {
+      "delete": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Delete a notification",
+        "parameters": [
+          {
+            "name": "note_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Notification deleted"
+          },
+          "404": {
+            "description": "Notification not found"
+          }
+        }
+      }
+    },
+    "/stats/dashboard": {
+      "get": {
+        "tags": [
+          "Stats"
+        ],
+        "summary": "Dashboard statistics \u2014 role-scoped: admins see all patients, doctors see assigned patients, patients see their own stats",
+        "responses": {
+          "200": {
+            "description": "Dashboard stats object including adherenceTrend, bloodSugarTrend, patientsByStatus, etc."
+          }
+        }
+      }
+    },
+    "/stats/report/pdf": {
+      "get": {
+        "tags": [
+          "Stats"
+        ],
+        "summary": "Download health report as PDF \u2014 admins see all patients, doctors see assigned patients",
+        "responses": {
+          "200": {
+            "description": "PDF file download",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "Health check",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Service is running"
+          }
+        }
+      }
+    },
+    "/features/": {
+      "get": {
+        "summary": "List dashboard features",
+        "description": "Returns features scoped by role. Admin sees all, doctor/patient sees their own.",
+        "tags": [
+          "Features"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of dashboard features"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a new dashboard feature",
+        "tags": [
+          "Features"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "title",
+                  "type",
+                  "targetRole"
+                ],
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "stat",
+                      "chart",
+                      "list",
+                      "alert"
+                    ]
+                  },
+                  "targetRole": {
+                    "type": "string",
+                    "enum": [
+                      "doctor",
+                      "patient"
+                    ]
+                  },
+                  "enabled": {
+                    "type": "boolean"
+                  },
+                  "value": {
+                    "type": "string"
+                  },
+                  "unit": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Feature created"
+          },
+          "403": {
+            "description": "Admin only"
+          }
+        }
+      }
+    },
+    "/features/{feature_id}": {
+      "put": {
+        "summary": "Update a dashboard feature",
+        "tags": [
+          "Features"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "feature_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "enabled": {
+                    "type": "boolean"
+                  },
+                  "value": {
+                    "type": "string"
+                  },
+                  "unit": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Feature updated"
+          },
+          "403": {
+            "description": "Admin only"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a dashboard feature",
+        "tags": [
+          "Features"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "feature_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Feature deleted"
+          },
+          "400": {
+            "description": "Cannot delete built-in feature"
+          },
+          "403": {
+            "description": "Admin only"
+          }
+        }
+      }
+    },
+    "/features/{feature_id}/toggle": {
+      "put": {
+        "summary": "Toggle a feature on/off",
+        "tags": [
+          "Features"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "feature_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Feature toggled"
+          },
+          "403": {
+            "description": "Admin only"
+          }
+        }
+      }
+    },
+    "/sms/status": {
+      "get": {
+        "summary": "Get SMS enabled status",
+        "tags": [
+          "SMS"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "SMS status returned"
+          }
+        }
+      }
+    },
+    "/sms/toggle": {
+      "post": {
+        "summary": "Enable or disable SMS globally",
+        "tags": [
+          "SMS"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "enabled": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "SMS toggled"
+          },
+          "403": {
+            "description": "Admin only"
+          }
+        }
+      }
+    },
+    "/sms/test": {
+      "post": {
+        "summary": "Send a test SMS",
+        "tags": [
+          "SMS"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "phone"
+                ],
+                "properties": {
+                  "phone": {
+                    "type": "string",
+                    "example": "0712345678"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Test SMS result"
+          },
+          "403": {
+            "description": "Admin only"
+          }
+        }
+      }
+    },
+    "/sms/logs": {
+      "get": {
+        "summary": "Get paginated SMS logs",
+        "tags": [
+          "SMS"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 50
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "sent",
+                "failed",
+                "disabled"
+              ]
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated SMS logs"
+          },
+          "403": {
+            "description": "Admin only"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Clear all SMS logs",
+        "tags": [
+          "SMS"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Logs cleared"
+          },
+          "403": {
+            "description": "Admin only"
+          }
+        }
+      }
+    },
+    "/sms/logs/stats": {
+      "get": {
+        "summary": "Get SMS statistics and 7-day breakdown",
+        "tags": [
+          "SMS"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "SMS stats including total, sent, failed, success rate, daily chart, by category"
+          },
+          "403": {
+            "description": "Admin only"
+          }
+        }
+      }
+    },
+    "/patients/{patient_id}/reassign": {
+      "put": {
+        "summary": "Reassign a patient to a different doctor",
+        "description": "Admin only. Sends SMS and in-app notifications to both patient and new doctor.",
+        "tags": [
+          "Patients"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "patient_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "doctor_id"
+                ],
+                "properties": {
+                  "doctor_id": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Patient reassigned successfully"
+          },
+          "403": {
+            "description": "Admin only"
+          },
+          "404": {
+            "description": "Patient or doctor not found"
+          }
+        }
+      }
+    },
+    "/patients/reassign-bulk": {
+      "put": {
+        "summary": "Bulk reassign all patients from one doctor to another",
+        "description": "Admin only. Moves all patients assigned to from_doctor_id to to_doctor_id. Sends SMS to each patient and a summary SMS to the new doctor.",
+        "tags": [
+          "Patients"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "from_doctor_id",
+                  "to_doctor_id"
+                ],
+                "properties": {
+                  "from_doctor_id": {
+                    "type": "integer",
+                    "description": "Doctor whose patients will be moved"
+                  },
+                  "to_doctor_id": {
+                    "type": "integer",
+                    "description": "Doctor who will receive the patients"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Bulk reassignment complete with count"
+          },
+          "400": {
+            "description": "Same doctor or missing fields"
+          },
+          "403": {
+            "description": "Admin only"
+          },
+          "404": {
+            "description": "Target doctor not found"
+          }
+        }
+      }
+    },
+    "/broadcast/": {
+      "post": {
+        "summary": "Send broadcast SMS to a group of users",
+        "tags": [
+          "Broadcast"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "message",
+                  "target"
+                ],
+                "properties": {
+                  "message": {
+                    "type": "string"
+                  },
+                  "target": {
+                    "type": "string",
+                    "enum": [
+                      "all_patients",
+                      "all_doctors",
+                      "critical_patients",
+                      "specific"
+                    ]
+                  },
+                  "patient_ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Broadcast sent with count"
+          },
+          "403": {
+            "description": "Admin/Doctor only"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Features",
+      "description": "Dashboard feature toggle management"
+    },
+    {
+      "name": "SMS",
+      "description": "SMS service \u2014 logs, stats, toggle, test"
+    },
+    {
+      "name": "Broadcast",
+      "description": "Mass SMS broadcast to patients and doctors"
+    }
+  ]
+}
