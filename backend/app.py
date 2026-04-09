@@ -42,7 +42,7 @@ def create_app():
 
     CORS(
     app,
-    origins=["http://localhost:8080", "http://localhost:5173"],
+    origins=["http://localhost:8080", "http://localhost:5173", "https://daibecare.netlify.app"],
     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization"],
     supports_credentials=True
