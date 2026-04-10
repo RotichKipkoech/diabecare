@@ -95,6 +95,7 @@ class Patient(db.Model):
             'next_visit': self.next_visit.isoformat() if self.next_visit else None,
             'assigned_doctor_id': self.assigned_doctor_id,
             'assigned_doctor_name': self.assigned_doctor.full_name if self.assigned_doctor else None,
+            'avatar_url': self.user.avatar_url if self.user else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
         }
         if include_medications:

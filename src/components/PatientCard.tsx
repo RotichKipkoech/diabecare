@@ -32,8 +32,19 @@ const PatientCard = ({ patient, index = 0 }: PatientCardProps) => {
       <div className="flex items-center justify-between gap-3">
         {/* Left: avatar + info */}
         <div className="flex items-center gap-3 min-w-0 flex-1">
-          <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full bg-primary/10 text-primary font-bold font-display text-sm flex-shrink-0">
-            {patient.name?.split(' ').map((n: string) => n[0]).join('')}
+          {/* Avatar — photo if available, initials otherwise */}
+          <div className="flex-shrink-0">
+            {(patient as any).avatar_url ? (
+              <img
+                src={(patient as any).avatar_url}
+                alt={patient.name}
+                className="h-10 w-10 sm:h-11 sm:w-11 rounded-full object-cover ring-2 ring-border"
+              />
+            ) : (
+              <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full bg-primary/10 text-primary font-bold font-display text-sm">
+                {patient.name?.split(' ').map((n: string) => n[0]).join('')}
+              </div>
+            )}
           </div>
 
           <div className="min-w-0 flex-1">

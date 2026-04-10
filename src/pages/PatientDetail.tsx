@@ -45,6 +45,7 @@ const PatientDetail = () => {
           adherence_rate: p.adherence_rate,
           status: p.status,
           assigned_doctor_name: p.assigned_doctor_name || null,
+          avatar_url: p.avatar_url || null,
           medications: (p.medications || []).filter((m: any) => !m.completed).map((m: any) => ({
             id: String(m.id),
             name: m.name,
@@ -154,9 +155,17 @@ const PatientDetail = () => {
         {/* ── Left Panel ── */}
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="lg:col-span-1 rounded-xl border border-border bg-card p-6 shadow-card">
           <div className="flex items-center gap-4 mb-6">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary font-bold font-display text-lg">
-              {patient.name.split(' ').map(n => n[0]).join('')}
-            </div>
+            {(patient as any).avatar_url ? (
+              <img
+                src={(patient as any).avatar_url}
+                alt={patient.name}
+                className="h-14 w-14 rounded-full object-cover ring-2 ring-border flex-shrink-0"
+              />
+            ) : (
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary font-bold font-display text-lg flex-shrink-0">
+                {patient.name.split(' ').map(n => n[0]).join('')}
+              </div>
+            )}
             <div>
               <h2 className="font-bold font-display text-foreground">{patient.name}</h2>
               <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold capitalize ${statusColor}`}>{patient.status}</span>
