@@ -4,7 +4,7 @@ import StatCard from '@/components/StatCard';
 import {
   Users, Activity, AlertTriangle, CalendarDays, Search, Loader2,
   Pill, Clock, RefreshCcw, X, User, Wifi, WifiOff, ChevronRight,
-  Stethoscope, Heart, TrendingUp, Droplets, Sparkles,
+  Stethoscope, Heart, TrendingUp, Droplets, Sparkles, FileText,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
