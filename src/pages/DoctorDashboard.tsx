@@ -174,6 +174,7 @@ const DoctorDashboard = () => {
   const [schedulePatientId, setSchedulePatientId] = useState<number | null>(null);
   const [scheduleDate, setScheduleDate]     = useState<Date | null>(null);
   const [scheduleType, setScheduleType]     = useState('Follow-up');
+  const [scheduleNotes, setScheduleNotes]   = useState('');
   const [scheduling, setScheduling]         = useState(false);
 
   // Medication modal
@@ -258,11 +259,12 @@ const DoctorDashboard = () => {
         patient_id: schedulePatientId,
         appointment_date: scheduleDate.toISOString(),
         type: scheduleType,
+        notes: scheduleNotes.trim(),
       });
       toast.success('Appointment scheduled');
       await fetchAll();
       setScheduleOpen(false);
-      setSchedulePatientId(null); setScheduleDate(null); setScheduleType('Follow-up');
+      setSchedulePatientId(null); setScheduleDate(null); setScheduleType('Follow-up'); setScheduleNotes('');
     } catch (err: any) { toast.error(err.message); }
     finally { setScheduling(false); }
   };
@@ -516,7 +518,7 @@ const DoctorDashboard = () => {
             >
               {/* Gradient header */}
               <div className="relative rounded-t-3xl bg-gradient-to-br from-primary to-primary/80 px-6 pt-6 pb-8">
-                <button onClick={() => setScheduleOpen(false)}
+                <button onClick={() => { setScheduleOpen(false); setScheduleNotes(''); }}
                   className="absolute right-4 top-4 flex h-7 w-7 items-center justify-center rounded-full bg-white/20 text-white/70 hover:text-white hover:bg-white/30 transition-colors">
                   <X className="h-3.5 w-3.5" />
                 </button>
@@ -574,6 +576,21 @@ const DoctorDashboard = () => {
                     <input type="text" value={scheduleType} onChange={e => setScheduleType(e.target.value)}
                       placeholder="e.g. Follow-up, Consultation, Review"
                       className={inputCls} />
+                  </div>
+                </Field>
+
+                <Field label="Notes (optional)">
+                  <div className="relative">
+                    <FileText className="absolute left-3 top-3 h-3.5 w-3.5 text-gray-300" />
+                    <textarea
+                      value={scheduleNotes}
+                      onChange={e => setScheduleNotes(e.target.value)}
+                      rows={3}
+                      maxLength={500}
+                      placeholder="Clinical notes, preparation instructions, follow-up details…"
+                      className="w-full rounded-2xl border border-gray-200 bg-gray-50 pl-9 pr-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40 focus:bg-white transition-all resize-none"
+                    />
+                    <p className="text-[11px] text-gray-300 text-right mt-1">{scheduleNotes.length}/500</p>
                   </div>
                 </Field>
               </div>
