@@ -514,7 +514,7 @@ const DoctorDashboard = () => {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.94, y: 20 }}
               transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-              className="w-full max-w-md rounded-3xl bg-white shadow-2xl"
+              className="w-full max-w-md rounded-3xl bg-white shadow-2xl max-h-[92vh] flex flex-col overflow-hidden"
             >
               {/* Gradient header */}
               <div className="relative rounded-t-3xl bg-gradient-to-br from-primary to-primary/80 px-6 pt-6 pb-8">
@@ -534,7 +534,7 @@ const DoctorDashboard = () => {
               </div>
 
               {/* Pull-up card effect */}
-              <div className="-mt-4 rounded-t-3xl bg-white px-6 pt-6 pb-5 space-y-4">
+              <div className="-mt-4 rounded-t-3xl bg-white px-6 pt-6 pb-5 space-y-4 overflow-y-auto flex-1">
                 <Field label="Patient">
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-300 z-10" />
@@ -595,7 +595,7 @@ const DoctorDashboard = () => {
                 </Field>
               </div>
 
-              <div className="flex gap-3 px-6 pb-6">
+              <div className="flex gap-3 px-6 pb-6 flex-shrink-0 border-t border-gray-100 pt-4">
                 <button onClick={() => setScheduleOpen(false)}
                   className="flex-1 rounded-2xl border border-gray-200 py-3 text-sm font-semibold text-gray-500 hover:bg-gray-50 transition-colors">
                   Cancel
@@ -622,7 +622,7 @@ const DoctorDashboard = () => {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.94, y: 20 }}
               transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-              className="w-full max-w-md rounded-3xl bg-white shadow-2xl"
+              className="w-full max-w-md rounded-3xl bg-white shadow-2xl max-h-[92vh] flex flex-col overflow-hidden"
             >
               {/* Indigo gradient header */}
               <div className="relative rounded-t-3xl bg-gradient-to-br from-indigo-600 to-indigo-500 px-6 pt-6 pb-8">
@@ -690,7 +690,7 @@ const DoctorDashboard = () => {
                 <p className="text-[11px] text-gray-300 pt-1">* Name, dosage and frequency are required</p>
               </div>
 
-              <div className="flex gap-3 px-6 pb-6">
+              <div className="flex gap-3 px-6 pb-6 flex-shrink-0 border-t border-gray-100 pt-4">
                 <button onClick={() => setMedOpen(false)}
                   className="flex-1 rounded-2xl border border-gray-200 py-3 text-sm font-semibold text-gray-500 hover:bg-gray-50 transition-colors">
                   Cancel

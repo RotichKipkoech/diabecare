@@ -205,22 +205,28 @@ const ManageModal = ({ appt, onClose, onUpdated }: { appt: AppointmentData; onCl
 
           {/* ── Notes field — always visible ───────────────────────────── */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">
-              <FileText className="inline h-3.5 w-3.5 mr-1 -mt-0.5" />
-              Notes
+            <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">
+              <FileText className="h-3.5 w-3.5" />
+              Clinical Notes
             </label>
+            {appt.notes && appt.notes !== notes && (
+              <div className="mb-2.5 rounded-xl bg-amber-50 border border-amber-200 px-3 py-2.5">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-amber-500 mb-1">Previously Saved</p>
+                <p className="text-xs text-amber-800 leading-relaxed whitespace-pre-wrap">{appt.notes}</p>
+                <button onClick={() => setNotes(appt.notes)} className="mt-1.5 text-[11px] text-amber-600 hover:text-amber-800 font-semibold underline underline-offset-2">
+                  Restore original
+                </button>
+              </div>
+            )}
             <textarea
               value={notes}
               onChange={e => setNotes(e.target.value)}
               rows={3}
-              placeholder="Add clinical notes, instructions, or follow-up details…"
+              maxLength={1000}
+              placeholder="Add clinical notes, preparation instructions, or follow-up details…"
               className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-800 placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40 focus:bg-white transition-all resize-none"
             />
-            {appt.notes && appt.notes !== notes && (
-              <button onClick={() => setNotes(appt.notes)} className="mt-1 text-[11px] text-gray-400 hover:text-gray-600 underline underline-offset-2">
-                Reset to original
-              </button>
-            )}
+            <p className="text-[11px] text-gray-300 text-right mt-1">{notes.length}/1000</p>
           </div>
 
           {isRequested && (
