@@ -11,16 +11,39 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
 
-    <!-- Open Graph / Social preview -->
+    <!--
+      Open Graph / Social preview
+      ─────────────────────────────────────────────────────────────────────────
+      WhatsApp, Facebook, LinkedIn, and Twitter ALL require absolute URLs for
+      og:image — a relative path like /og-image1.png is invisible to crawlers.
+      The og:url tag is also mandatory for WhatsApp to generate a preview.
+
+      Your image (og-image1.png) must be:
+        • Reachable at the absolute URL below (put it in /public/)
+        • At least 300 × 200 px  (1200 × 630 is ideal for all platforms)
+        • Under 300 KB
+        • PNG or JPG (not SVG)
+
+      After deploying, force-refresh WhatsApp's cache by sharing the link once
+      in a browser first, or use https://www.opengraph.xyz to validate.
+    -->
+    <meta property="og:site_name" content="DiabeCare" />
     <meta property="og:title" content="DiabeCare" />
     <meta property="og:description" content="Diabetic Patient Medication Follow-Up System" />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="/og-image1.png" />
+    <meta property="og:url" content="https://daibecare.netlify.app" />
+    <meta property="og:image" content="https://daibecare.netlify.app/og-image1.png" />
+    <meta property="og:image:secure_url" content="https://daibecare.netlify.app/og-image1.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:alt" content="DiabeCare — Diabetic Patient Medication Follow-Up System" />
 
+    <!-- Twitter / X card -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="DiabeCare" />
     <meta name="twitter:description" content="Diabetic Patient Medication Follow-Up System" />
-    <meta name="twitter:image" content="/og-image1.png" />
+    <meta name="twitter:image" content="https://daibecare.netlify.app/og-image1.png" />
   </head>
 
   <body>
