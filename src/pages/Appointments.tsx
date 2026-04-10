@@ -72,7 +72,8 @@ const StatusBadge = ({ status }: { status: string }) => {
 };
 
 const AppointmentDetailModal = ({ appt, onClose }: { appt: AppointmentData; onClose: () => void }) => {
-  const d = new Date(appt.appointment_date);
+  const utcStr = appt.appointment_date.endsWith('Z') ? appt.appointment_date : appt.appointment_date + 'Z';
+  const d = new Date(utcStr);
   const cfg = STATUS_CONFIG[appt.status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.scheduled;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
@@ -144,15 +145,21 @@ const AppointmentDetailModal = ({ appt, onClose }: { appt: AppointmentData; onCl
 };
 
 const ManageModal = ({ appt, onClose, onUpdated }: { appt: AppointmentData; onClose: () => void; onUpdated: (updated: AppointmentData) => void }) => {
-  const [newDate, setNewDate] = useState<Date>(new Date(appt.appointment_date));
+  const [newDate, setNewDate] = useState<Date>(() => {
+    const utcStr = appt.appointment_date.endsWith('Z') ? appt.appointment_date : appt.appointment_date + 'Z';
+    return new Date(utcStr);
+  });
+  const [notes, setNotes]     = useState(appt.notes || '');
   const [updating, setUpdating] = useState(false);
   const isRequested = appt.status === 'requested';
 
   const doUpdate = async (payload: any) => {
     setUpdating(true);
     try {
-      await appointmentsApi.update(appt.id, payload);
-      onUpdated({ ...appt, ...payload });
+      // Always include the current notes value so the doctor's input is saved
+      const finalPayload = { ...payload, notes };
+      await appointmentsApi.update(appt.id, finalPayload);
+      onUpdated({ ...appt, ...finalPayload });
       toast.success('Appointment updated');
       onClose();
     } catch (e: any) {
@@ -162,14 +169,16 @@ const ManageModal = ({ appt, onClose, onUpdated }: { appt: AppointmentData; onCl
     }
   };
 
-  const d = new Date(appt.appointment_date);
+  const d = new Date(appt.appointment_date.endsWith('Z') ? appt.appointment_date : appt.appointment_date + 'Z');
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <motion.div initial={{ opacity: 0, scale: 0.94, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.94, y: 20 }} transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-        className="w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl">
-        <div className={`relative px-6 pt-7 pb-5 ${isRequested ? 'bg-gradient-to-br from-amber-600 to-amber-500' : 'bg-gradient-to-br from-slate-800 to-slate-700'}`}>
+        className="w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl max-h-[90vh] flex flex-col">
+
+        {/* Header */}
+        <div className={`relative px-6 pt-7 pb-5 flex-shrink-0 ${isRequested ? 'bg-gradient-to-br from-amber-600 to-amber-500' : 'bg-gradient-to-br from-slate-800 to-slate-700'}`}>
           <button onClick={onClose} className="absolute right-4 top-4 flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-white/60 hover:text-white transition-colors">
             <X className="h-3.5 w-3.5" />
           </button>
@@ -182,7 +191,9 @@ const ManageModal = ({ appt, onClose, onUpdated }: { appt: AppointmentData; onCl
           </div>
         </div>
 
-        <div className="px-6 py-5 space-y-5">
+        {/* Scrollable body */}
+        <div className="px-6 py-5 space-y-5 overflow-y-auto flex-1">
+
           {isRequested && (
             <div className="flex items-start gap-2.5 rounded-2xl bg-amber-50 border border-amber-200 px-4 py-3">
               <Bell className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
@@ -191,6 +202,26 @@ const ManageModal = ({ appt, onClose, onUpdated }: { appt: AppointmentData; onCl
               </p>
             </div>
           )}
+
+          {/* ── Notes field — always visible ───────────────────────────── */}
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">
+              <FileText className="inline h-3.5 w-3.5 mr-1 -mt-0.5" />
+              Notes
+            </label>
+            <textarea
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              rows={3}
+              placeholder="Add clinical notes, instructions, or follow-up details…"
+              className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-800 placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40 focus:bg-white transition-all resize-none"
+            />
+            {appt.notes && appt.notes !== notes && (
+              <button onClick={() => setNotes(appt.notes)} className="mt-1 text-[11px] text-gray-400 hover:text-gray-600 underline underline-offset-2">
+                Reset to original
+              </button>
+            )}
+          </div>
 
           {isRequested && (
             <button onClick={() => doUpdate({ status: 'scheduled' })} disabled={updating}
@@ -236,7 +267,7 @@ const ManageModal = ({ appt, onClose, onUpdated }: { appt: AppointmentData; onCl
           </div>
         </div>
 
-        <div className="px-6 pb-6">
+        <div className="px-6 pb-6 flex-shrink-0">
           <button onClick={onClose} className="w-full rounded-2xl bg-gray-100 py-2.5 text-sm font-semibold text-gray-500 hover:bg-gray-200 transition">Dismiss</button>
         </div>
       </motion.div>
@@ -362,7 +393,7 @@ const Appointments = () => {
         <div className="space-y-3">
           {filtered.length === 0 && <div className="py-16 text-center text-muted-foreground text-sm">No appointments found.</div>}
           {filtered.map((appt, i) => {
-            const d = new Date(appt.appointment_date);
+            const d = new Date(appt.appointment_date.endsWith('Z') ? appt.appointment_date : appt.appointment_date + 'Z');
             const effStatus = effectiveStatus(appt);
             const cfg = STATUS_CONFIG[effStatus as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.scheduled;
             return (
