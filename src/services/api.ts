@@ -135,6 +135,26 @@ export const smsLogsApi = {
   retrySms: (logId: number) => request<AnyRecord>(`/sms/logs/${logId}/retry`, { method: 'POST' }),
 };
 
+// ── Forgot Password / OTP Reset API ─────────────────────────────────────────
+export const forgotPasswordApi = {
+  lookup:    (username: string) =>
+    request<{ masked_phone: string }>('/auth/forgot-password/lookup', {
+      method: 'POST', body: JSON.stringify({ username }),
+    }),
+  sendOtp:   (username: string) =>
+    request<{ message: string }>('/auth/forgot-password/send-otp', {
+      method: 'POST', body: JSON.stringify({ username }),
+    }),
+  verifyOtp: (username: string, otp: string) =>
+    request<{ reset_token: string }>('/auth/forgot-password/verify-otp', {
+      method: 'POST', body: JSON.stringify({ username, otp }),
+    }),
+  reset:     (reset_token: string, new_password: string, confirm_password: string) =>
+    request<{ message: string }>('/auth/forgot-password/reset', {
+      method: 'POST', body: JSON.stringify({ reset_token, new_password, confirm_password }),
+    }),
+};
+
 // ── Reassign API (admin only) ─────────────────────────────────────────────
 export const reassignApi = {
   reassignPatient: (patientId: number, doctorId: number) =>
