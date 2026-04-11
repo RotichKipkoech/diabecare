@@ -17,13 +17,14 @@ auth_bp = Blueprint('auth', __name__)
 @auth_bp.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
-    username = data.get('username', '').strip()
+    username = data.get('username', '').strip().lower()  # case-insensitive
     password = data.get('password', '').strip()
 
     if not username or not password:
         return jsonify({'error': 'Username and password are required'}), 400
 
-    user = User.query.filter_by(username=username).first()
+    from sqlalchemy import func as _func
+    user = User.query.filter(_func.lower(User.username) == username).first()
 
     if not user or not bcrypt.checkpw(password.encode('utf-8'), user.password_hash.encode('utf-8')):
         return jsonify({'error': 'Invalid username or password'}), 401
@@ -96,7 +97,7 @@ def register():
 
     try:
         user = User(
-            username=data['username'],
+            username=data['username'].strip().lower(),
             email=data['email'],
             password_hash=password_hash,
             role=data['role'],

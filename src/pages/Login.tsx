@@ -353,7 +353,7 @@ const Login = () => {
   const [selectedRole, setSelectedRole] = useState<UserRole>('admin');
   const [loading, setLoading]           = useState(false);
   const [showForgot, setShowForgot]     = useState(false);
-  const { login }    = useAuth();
+  const { login, logout } = useAuth();
   const navigate     = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -364,7 +364,21 @@ const Login = () => {
     }
     setLoading(true);
     try {
+      // login() stores the user — we read it back from localStorage to check role
       await login(username, password);
+
+      const stored = localStorage.getItem('user');
+      const loggedInUser = stored ? JSON.parse(stored) : null;
+      const actualRole = loggedInUser?.role;
+
+      if (actualRole && actualRole !== selectedRole) {
+        // Role mismatch — log them out immediately and show a clear message
+        logout();
+        const roleLabel = selectedRole.charAt(0).toUpperCase() + selectedRole.slice(1);
+        toast.error(`Invalid username or password`);
+        return;
+      }
+
       toast.success('Login successful!');
       navigate('/');
     } catch (err: any) {
