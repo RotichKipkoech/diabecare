@@ -107,6 +107,57 @@ const DatePickerStyles = () => (
     }
     .react-datepicker__input-container { width: 100% !important; }
     .react-datepicker__input-container input { width: 100% !important; }
+    /* ── Mobile: shrink calendar to fit small screens ── */
+    @media (max-width: 480px) {
+      .react-datepicker {
+        font-size: 11px !important;
+      }
+      .react-datepicker__month-container {
+        float: none !important;
+        width: 100% !important;
+      }
+      .react-datepicker__day-name,
+      .react-datepicker__day {
+        width: 1.7rem !important;
+        line-height: 1.7rem !important;
+        font-size: 11px !important;
+        margin: 1px !important;
+      }
+      .react-datepicker__current-month {
+        font-size: 12px !important;
+      }
+      .react-datepicker__time-container {
+        float: none !important;
+        border-left: none !important;
+        border-top: 1px solid hsl(200,20%,88%) !important;
+        width: 100% !important;
+      }
+      .react-datepicker__time-box {
+        width: 100% !important;
+      }
+      .react-datepicker__time-list {
+        height: 80px !important;
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        align-items: center !important;
+        padding: 0 4px !important;
+        gap: 4px !important;
+      }
+      .react-datepicker__time-list-item {
+        flex-shrink: 0 !important;
+        border-radius: 8px !important;
+        padding: 6px 10px !important;
+        background: hsl(210,20%,97%) !important;
+      }
+      .react-datepicker-popper {
+        width: calc(100vw - 2rem) !important;
+        max-width: 340px !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+      }
+    }
   `}</style>
 );
 
@@ -514,7 +565,7 @@ const DoctorDashboard = () => {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.94, y: 20 }}
               transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-              className="w-full max-w-md rounded-3xl bg-white shadow-2xl max-h-[92vh] flex flex-col overflow-hidden"
+              className="w-full max-w-md rounded-3xl bg-white shadow-2xl max-h-[92vh] flex flex-col"
             >
               {/* Gradient header */}
               <div className="relative rounded-t-3xl bg-gradient-to-br from-primary to-primary/80 px-6 pt-6 pb-8">
@@ -534,7 +585,7 @@ const DoctorDashboard = () => {
               </div>
 
               {/* Pull-up card effect */}
-              <div className="-mt-4 rounded-t-3xl bg-white px-6 pt-6 pb-5 space-y-4 overflow-y-auto flex-1">
+              <div className="-mt-4 rounded-t-3xl bg-white px-6 pt-6 pb-5 space-y-4 overflow-visible flex-1">
                 <Field label="Patient">
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-300 z-10" />
@@ -557,6 +608,7 @@ const DoctorDashboard = () => {
                       placeholderText="Select date and time"
                       popperPlacement="bottom-start"
                       popperProps={{ strategy: 'fixed' }}
+                      portalId="datepicker-portal"
                       wrapperClassName="w-full"
                       timeIntervals={30}
                       className={inputCls}
@@ -622,7 +674,7 @@ const DoctorDashboard = () => {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.94, y: 20 }}
               transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-              className="w-full max-w-md rounded-3xl bg-white shadow-2xl max-h-[92vh] flex flex-col overflow-hidden"
+              className="w-full max-w-md rounded-3xl bg-white shadow-2xl max-h-[92vh] flex flex-col"
             >
               {/* Indigo gradient header */}
               <div className="relative rounded-t-3xl bg-gradient-to-br from-indigo-600 to-indigo-500 px-6 pt-6 pb-8">

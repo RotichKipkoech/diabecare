@@ -156,7 +156,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ role = "patient" 
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 6, scale: 0.97 }}
             transition={{ duration: 0.15 }}
-            className="absolute right-0 top-11 z-50 w-96 rounded-2xl border border-border bg-card shadow-2xl overflow-hidden"
+            className="absolute right-0 top-11 z-50 w-[calc(100vw-1rem)] sm:w-96 max-w-[24rem] rounded-2xl border border-border bg-card shadow-2xl overflow-hidden"
           >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-border">
@@ -224,7 +224,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ role = "patient" 
                 </div>
                 <div className="space-y-0.5">
                   {refillNotifs.slice(0, 3).map(n => (
-                    <p key={n.id} className="text-[11px] text-amber-700 leading-snug">
+                    <p key={n.id} className="text-[11px] text-amber-700 leading-snug line-clamp-2">
                       · {n.message}
                     </p>
                   ))}
@@ -246,7 +246,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ role = "patient" 
                 </div>
                 <div className="space-y-0.5">
                   {completedNotifs.slice(0, 3).map(n => (
-                    <p key={n.id} className="text-[11px] text-emerald-700 leading-snug">
+                    <p key={n.id} className="text-[11px] text-emerald-700 leading-snug line-clamp-2">
                       · {n.message}
                     </p>
                   ))}
@@ -255,7 +255,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ role = "patient" 
             )}
 
             {/* Notification list */}
-            <div className="max-h-72 overflow-y-auto divide-y divide-border/50 mt-2">
+            <div className="max-h-[50vh] sm:max-h-72 overflow-y-auto divide-y divide-border/50 mt-2">
               {loading && displayed.length === 0 ? (
                 <div className="flex justify-center py-8">
                   <RefreshCcw className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -296,7 +296,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ role = "patient" 
                             )}
                             <p className="text-xs font-semibold text-foreground truncate">{n.title}</p>
                           </div>
-                          <p className="text-[11px] text-muted-foreground leading-snug mt-0.5 line-clamp-2">
+                          <p className="text-[11px] text-muted-foreground leading-snug mt-0.5 line-clamp-3 sm:line-clamp-2">
                             {n.message}
                           </p>
                           <div className="flex items-center gap-1 mt-1">
