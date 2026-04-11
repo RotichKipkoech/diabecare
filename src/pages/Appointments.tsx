@@ -72,7 +72,7 @@ const StatusBadge = ({ status }: { status: string }) => {
 };
 
 const AppointmentDetailModal = ({ appt, onClose }: { appt: AppointmentData; onClose: () => void }) => {
-  const utcStr = appt.appointment_date.endsWith('Z') ? appt.appointment_date : appt.appointment_date + 'Z';
+  const utcStr = appt.appointment_date;  // Kenya time — no UTC conversion needed
   const d = new Date(utcStr);
   const cfg = STATUS_CONFIG[appt.status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.scheduled;
   return (
@@ -146,7 +146,7 @@ const AppointmentDetailModal = ({ appt, onClose }: { appt: AppointmentData; onCl
 
 const ManageModal = ({ appt, onClose, onUpdated }: { appt: AppointmentData; onClose: () => void; onUpdated: (updated: AppointmentData) => void }) => {
   const [newDate, setNewDate] = useState<Date>(() => {
-    const utcStr = appt.appointment_date.endsWith('Z') ? appt.appointment_date : appt.appointment_date + 'Z';
+    const utcStr = appt.appointment_date;  // Kenya time — no UTC conversion needed
     return new Date(utcStr);
   });
   const [notes, setNotes]     = useState(appt.notes || '');
@@ -169,7 +169,7 @@ const ManageModal = ({ appt, onClose, onUpdated }: { appt: AppointmentData; onCl
     }
   };
 
-  const d = new Date(appt.appointment_date.endsWith('Z') ? appt.appointment_date : appt.appointment_date + 'Z');
+  const d = new Date(appt.appointment_date);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
@@ -399,7 +399,7 @@ const Appointments = () => {
         <div className="space-y-3">
           {filtered.length === 0 && <div className="py-16 text-center text-muted-foreground text-sm">No appointments found.</div>}
           {filtered.map((appt, i) => {
-            const d = new Date(appt.appointment_date.endsWith('Z') ? appt.appointment_date : appt.appointment_date + 'Z');
+            const d = new Date(appt.appointment_date);
             const effStatus = effectiveStatus(appt);
             const cfg = STATUS_CONFIG[effStatus as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.scheduled;
             return (
