@@ -156,7 +156,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ role = "patient" 
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 6, scale: 0.97 }}
             transition={{ duration: 0.15 }}
-            className="absolute right-0 top-11 z-50 w-[calc(100vw-1rem)] sm:w-96 max-w-[24rem] rounded-2xl border border-border bg-card shadow-2xl overflow-hidden"
+            className="fixed sm:absolute right-1 sm:right-0 top-14 sm:top-11 z-50 w-[calc(100vw-0.5rem)] sm:w-96 max-w-sm sm:max-w-[24rem] rounded-2xl border border-border bg-card shadow-2xl overflow-hidden mx-auto"
           >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-border">
@@ -255,7 +255,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ role = "patient" 
             )}
 
             {/* Notification list */}
-            <div className="max-h-[50vh] sm:max-h-72 overflow-y-auto divide-y divide-border/50 mt-2">
+            <div className="max-h-[55vh] sm:max-h-80 overflow-y-auto divide-y divide-border/50 mt-2">
               {loading && displayed.length === 0 ? (
                 <div className="flex justify-center py-8">
                   <RefreshCcw className="h-5 w-5 animate-spin text-muted-foreground" />
