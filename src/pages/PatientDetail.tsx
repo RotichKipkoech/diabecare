@@ -178,7 +178,22 @@ const PatientDetail = () => {
             <InfoRow icon={Calendar} label="Last Visit" value={patient.last_visit ? new Date(patient.last_visit).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'N/A'} />
             <InfoRow icon={Calendar} label="Next Visit" value={patient.next_visit ? new Date(patient.next_visit).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'N/A'} />
             {isDoctor && (
-              <InfoRow icon={Stethoscope} label="Assigned Doctor" value={(patient as any).assigned_doctor_name || 'Not assigned'} />
+              <div className="flex items-start gap-3">
+                <Stethoscope className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-[11px] text-muted-foreground">Assigned Doctor</p>
+                  <p className="text-sm font-medium text-foreground">
+                    {(patient as any).assigned_doctor_name || 'Not assigned'}
+                  </p>
+                  {(patient as any).assigned_doctor_phone && (
+                    <a href={`tel:${(patient as any).assigned_doctor_phone}`}
+                      className="flex items-center gap-1 mt-0.5 text-xs text-primary hover:underline">
+                      <Phone className="h-3 w-3 flex-shrink-0" />
+                      {(patient as any).assigned_doctor_phone}
+                    </a>
+                  )}
+                </div>
+              </div>
             )}
           </div>
 

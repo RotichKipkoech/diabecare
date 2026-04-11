@@ -377,9 +377,18 @@ const MyProfile = () => {
                       <div className="h-8 w-8 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
                         <Stethoscope className="h-4 w-4 text-primary" />
                       </div>
-                      <div>
+                      <div className="min-w-0 flex-1">
                         <p className="text-[10px] font-black uppercase tracking-[0.12em] text-muted-foreground/50">Your Assigned Doctor</p>
-                        <p className="text-sm font-bold text-foreground">{rawPatient.assigned_doctor_name || 'Not yet assigned'}</p>
+                        <p className="text-sm font-bold text-foreground">
+                          {rawPatient.assigned_doctor_name || 'Not yet assigned'}
+                        </p>
+                        {rawPatient.assigned_doctor_phone && (
+                          <a href={`tel:${rawPatient.assigned_doctor_phone}`}
+                            className="flex items-center gap-1 mt-0.5 text-xs text-primary hover:underline">
+                            <Phone className="h-3 w-3 flex-shrink-0" />
+                            {rawPatient.assigned_doctor_phone}
+                          </a>
+                        )}
                       </div>
                     </div>
 
@@ -423,9 +432,18 @@ const MyProfile = () => {
                       <div className="h-8 w-8 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
                         <Stethoscope className="h-4 w-4 text-primary" />
                       </div>
-                      <div>
+                      <div className="min-w-0 flex-1">
                         <p className="text-[10px] font-black uppercase tracking-[0.12em] text-muted-foreground/50">Your Assigned Doctor</p>
-                        <p className="text-sm font-bold text-foreground">{rawPatient.assigned_doctor_name || 'Not yet assigned'}</p>
+                        <p className="text-sm font-bold text-foreground">
+                          {rawPatient.assigned_doctor_name || 'Not yet assigned'}
+                        </p>
+                        {rawPatient.assigned_doctor_phone && (
+                          <a href={`tel:${rawPatient.assigned_doctor_phone}`}
+                            className="flex items-center gap-1 mt-0.5 text-xs text-primary hover:underline">
+                            <Phone className="h-3 w-3 flex-shrink-0" />
+                            {rawPatient.assigned_doctor_phone}
+                          </a>
+                        )}
                       </div>
                     </div>
                   </motion.div>
