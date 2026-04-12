@@ -8,7 +8,8 @@ import { useFeatures } from '@/contexts/FeaturesContext';
 import {
   Activity, Pill, CalendarDays, Droplets, Heart, Clock,
   Loader2, X, Stethoscope, FileText, Sparkles, XCircle, CheckCircle2,
-  RefreshCcw, Wifi, WifiOff, AlertTriangle, AlertCircle,
+  RefreshCcw, Wifi, WifiOff, AlertTriangle, AlertCircle, History,
+  ChevronRight, Calendar, User, Phone, Mail, MapPin,
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -51,9 +52,18 @@ const StatusBadge = ({ status }: { status: string }) => {
   );
 };
 
+// Helper function to parse Kenya date
+const parseKenyaDate = (dateString: string): Date => {
+  if (!dateString) return new Date();
+  if (dateString.includes('Z') || dateString.includes('+')) {
+    return new Date(dateString);
+  }
+  return new Date(dateString + '+03:00');
+};
+
 // Read-only appointment detail modal
 const AppointmentDetailModal = ({ appt, onClose }: { appt: any; onClose: () => void }) => {
-  const d = new Date(appt.appointment_date.includes("+") || appt.appointment_date.includes("Z") ? appt.appointment_date : appt.appointment_date + "+03:00");
+  const d = parseKenyaDate(appt.appointment_date);
   const cfg = STATUS_CONFIG[appt.status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.scheduled;
 
   return (
@@ -184,20 +194,15 @@ const PatientDashboard = () => {
   const [appointments, setAppointments] = useState<any[]>([]);
   const [stats, setStats] = useState<any>(null);
   const [selectedAppt, setSelectedAppt] = useState<any | null>(null);
-  const [showHistory, setShowHistory]   = useState(false);
-  const [historyTab, setHistoryTab]     = useState<'appointments' | 'medications'>('appointments');
-
   const [togglingMeds, setTogglingMeds] = useState<Record<string, boolean>>({});
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [isLive, setIsLive] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   
-  // History tab states
-  const [activeTab, setActiveTab] = useState<'current' | 'history'>('current');
-  const [completedMedications, setCompletedMedications] = useState<any[]>([]);
-  const [pastAppointments, setPastAppointments] = useState<any[]>([]);
-  const [loadingHistory, setLoadingHistory] = useState(false);
+  // History slide-over state
+  const [showHistory, setShowHistory] = useState(false);
+  const [historyTab, setHistoryTab] = useState<'appointments' | 'medications'>('appointments');
 
   const refreshStats = useCallback(async (silent = true) => {
     if (!silent) setRefreshing(true);
@@ -212,26 +217,6 @@ const PatientDashboard = () => {
       if (!silent) setRefreshing(false);
     }
   }, []);
-
-  const fetchHistory = useCallback(async () => {
-    if (!patientData) return;
-    setLoadingHistory(true);
-    try {
-      const allMeds = await medicationsApi.listByPatient(Number(patientData.id));
-      const completed = allMeds.filter((m: any) => m.completed === true);
-      setCompletedMedications(completed);
-      
-      const allAppointments = await appointmentsApi.list();
-      const past = allAppointments.filter((a: any) => 
-        a.status === 'completed' || a.status === 'cancelled' || a.status === 'missed'
-      );
-      setPastAppointments(past);
-    } catch (error: any) {
-      toast.error(error.message);
-    } finally {
-      setLoadingHistory(false);
-    }
-  }, [patientData]);
 
   const fetchAll = useCallback(async () => {
     try {
@@ -269,13 +254,6 @@ const PatientDashboard = () => {
     pollRef.current = setInterval(() => refreshStats(true), POLL_INTERVAL);
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, [fetchAll, refreshStats]);
-
-  // Load history when tab changes
-  useEffect(() => {
-    if (activeTab === 'history' && patientData) {
-      fetchHistory();
-    }
-  }, [activeTab, patientData, fetchHistory]);
 
   // Optimistic toggle — updates UI instantly, rolls back on error
   const handleToggleMed = async (medId: string, taken: boolean) => {
@@ -316,127 +294,136 @@ const PatientDashboard = () => {
   return (
     <Layout title="My Dashboard" subtitle="Your health overview and medication schedule">
       
-      {/* Tabs for Current vs History */}
-      <div className="flex items-center gap-2 mb-6 border-b border-border">
-        <button
-          onClick={() => setActiveTab('current')}
-          className={`px-4 py-2 text-sm font-semibold transition-colors relative ${
-            activeTab === 'current'
-              ? 'text-primary'
-              : 'text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          Current
-          {activeTab === 'current' && (
-            <motion.div
-              layoutId="activeTab"
-              className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"
-            />
-          )}
-        </button>
-        <button
-          onClick={() => setActiveTab('history')}
-          className={`px-4 py-2 text-sm font-semibold transition-colors relative ${
-            activeTab === 'history'
-              ? 'text-primary'
-              : 'text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          History
-          {activeTab === 'history' && (
-            <motion.div
-              layoutId="activeTab"
-              className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"
-            />
-          )}
-        </button>
+      {/* Stat Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {isEnabled('Blood Sugar Level') && (
+          <StatCard title="Blood Sugar" value={`${bs} mg/dL`} icon={Droplets}
+            trend={bs > 140 ? 'Above target' : 'In range'} trendUp={bs <= 140}
+            variant={bs > 180 ? 'danger' : bs > 140 ? 'warning' : 'success'} delay={0} />
+        )}
+        {isEnabled('HbA1c Reading') && (
+          <StatCard title="HbA1c" value={`${hba1c}%`} icon={Activity}
+            trend={hba1c < 7 ? 'Good control' : 'Needs improvement'} trendUp={hba1c < 7}
+            variant={hba1c > 8 ? 'danger' : 'success'} delay={0.05} />
+        )}
+        <StatCard title="Adherence" value={`${adh}%`} icon={Heart}
+          trend="This month" trendUp={adh >= 80} variant="primary" delay={0.1} />
+        {isEnabled('Medication Schedule') && (
+          <StatCard
+            title="Meds Today"
+            value={`${takenMeds}/${totalMeds}`}
+            icon={Pill}
+            trend={takenMeds === totalMeds && totalMeds > 0 ? 'All taken! 🎉' : `${totalMeds - takenMeds} remaining`}
+            trendUp={takenMeds === totalMeds && totalMeds > 0}
+            delay={0.15}
+          />
+        )}
       </div>
 
-      {activeTab === 'current' ? (
-        <>
-          {/* Stat Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            {isEnabled('Blood Sugar Level') && (
-              <StatCard title="Blood Sugar" value={`${bs} mg/dL`} icon={Droplets}
-                trend={bs > 140 ? 'Above target' : 'In range'} trendUp={bs <= 140}
-                variant={bs > 180 ? 'danger' : bs > 140 ? 'warning' : 'success'} delay={0} />
-            )}
-            {isEnabled('HbA1c Reading') && (
-              <StatCard title="HbA1c" value={`${hba1c}%`} icon={Activity}
-                trend={hba1c < 7 ? 'Good control' : 'Needs improvement'} trendUp={hba1c < 7}
-                variant={hba1c > 8 ? 'danger' : 'success'} delay={0.05} />
-            )}
-            <StatCard title="Adherence" value={`${adh}%`} icon={Heart}
-              trend="This month" trendUp={adh >= 80} variant="primary" delay={0.1} />
-            {isEnabled('Medication Schedule') && (
-              <StatCard
-                title="Meds Today"
-                value={`${takenMeds}/${totalMeds}`}
-                icon={Pill}
-                trend={takenMeds === totalMeds && totalMeds > 0 ? 'All taken! 🎉' : `${totalMeds - takenMeds} remaining`}
-                trendUp={takenMeds === totalMeds && totalMeds > 0}
-                delay={0.15}
-              />
-            )}
-          </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        {/* Blood Sugar Chart */}
+        {isEnabled('Blood Sugar Trend Chart') && (
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+            className="rounded-xl border border-border bg-card p-6 shadow-card">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-sm font-semibold font-display text-foreground">My Blood Sugar This Week</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">Last 7 days · mg/dL</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <LiveBadge lastUpdated={lastUpdated} isLive={isLive} />
+                <button onClick={() => refreshStats(false)} disabled={refreshing}
+                  className="rounded-lg p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">
+                  <RefreshCcw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+                </button>
+              </div>
+            </div>
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={stats?.bloodSugarTrend ?? []}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(200, 20%, 90%)" />
+                <XAxis dataKey="day" tick={{ fontSize: 12, fill: 'hsl(210, 12%, 50%)' }} axisLine={false} tickLine={false} />
+                <YAxis domain={[80, 200]} tick={{ fontSize: 12, fill: 'hsl(210, 12%, 50%)' }} axisLine={false} tickLine={false} />
+                <Tooltip
+                  contentStyle={{ background: 'hsl(0, 0%, 100%)', border: '1px solid hsl(200, 20%, 90%)', borderRadius: '8px', fontSize: '12px' }}
+                  formatter={(v: any) => [`${v} mg/dL`, 'Blood Sugar']}
+                />
+                <Bar dataKey="avg" fill="hsl(174, 62%, 38%)" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </motion.div>
+        )}
 
-            {/* Blood Sugar Chart */}
-            {isEnabled('Blood Sugar Trend Chart') && (
-              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-                className="rounded-xl border border-border bg-card p-6 shadow-card">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="text-sm font-semibold font-display text-foreground">My Blood Sugar This Week</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">Last 7 days · mg/dL</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <LiveBadge lastUpdated={lastUpdated} isLive={isLive} />
-                    <button onClick={() => refreshStats(false)} disabled={refreshing}
-                      className="rounded-lg p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">
-                      <RefreshCcw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
-                    </button>
-                  </div>
+        {/* Appointments — Upcoming + Missed/Overdue */}
+        {isEnabled('Upcoming Appointments') && (
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
+            className="rounded-xl border border-border bg-card p-6 shadow-card">
+
+            {/* Upcoming */}
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold font-display text-foreground">Upcoming Appointments</h3>
+              {upcomingAppts.length > 0 && (
+                <span className="rounded-full bg-primary/10 text-primary text-[11px] font-bold px-2 py-0.5">
+                  {upcomingAppts.length}
+                </span>
+              )}
+            </div>
+            <div className="space-y-2">
+              {upcomingAppts.slice(0, 3).map((appt) => {
+                const d = parseKenyaDate(appt.appointment_date);
+                return (
+                  <button key={appt.id} onClick={() => setSelectedAppt(appt)}
+                    className="w-full flex items-center gap-3 rounded-2xl bg-primary/5 hover:bg-primary/10 border border-primary/10 hover:border-primary/20 p-3 transition-all text-left">
+                    <div className="flex-shrink-0 flex flex-col items-center justify-center w-10 h-10 rounded-xl bg-white shadow-sm border border-primary/10">
+                      <span className="text-sm font-black leading-none text-primary">{d.getDate()}</span>
+                      <span className="text-[8px] font-bold uppercase tracking-wider text-primary/60">
+                        {d.toLocaleDateString('en-US', { month: 'short' })}
+                      </span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-foreground truncate">
+                        {appt.doctor_name ? `Dr. ${appt.doctor_name}` : 'Doctor'}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{appt.type}</p>
+                    </div>
+                    <div className="flex items-center gap-1 text-xs text-primary font-semibold flex-shrink-0">
+                      <Clock className="h-3 w-3" />
+                      {d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                    </div>
+                  </button>
+                );
+              })}
+              {upcomingAppts.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-6 text-center">
+                  <CalendarDays className="h-7 w-7 text-muted-foreground/30 mb-2" />
+                  <p className="text-sm text-muted-foreground">No upcoming appointments.</p>
+                  <p className="text-xs text-muted-foreground/60 mt-0.5">Your doctor will schedule one for you.</p>
                 </div>
-                <ResponsiveContainer width="100%" height={220}>
-                  <BarChart data={stats?.bloodSugarTrend ?? []}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(200, 20%, 90%)" />
-                    <XAxis dataKey="day" tick={{ fontSize: 12, fill: 'hsl(210, 12%, 50%)' }} axisLine={false} tickLine={false} />
-                    <YAxis domain={[80, 200]} tick={{ fontSize: 12, fill: 'hsl(210, 12%, 50%)' }} axisLine={false} tickLine={false} />
-                    <Tooltip
-                      contentStyle={{ background: 'hsl(0, 0%, 100%)', border: '1px solid hsl(200, 20%, 90%)', borderRadius: '8px', fontSize: '12px' }}
-                      formatter={(v: any) => [`${v} mg/dL`, 'Blood Sugar']}
-                    />
-                    <Bar dataKey="avg" fill="hsl(174, 62%, 38%)" radius={[6, 6, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </motion.div>
-            )}
+              )}
+            </div>
 
-            {/* Appointments — Upcoming + Missed/Overdue */}
-            {isEnabled('Upcoming Appointments') && (
-              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
-                className="rounded-xl border border-border bg-card p-6 shadow-card">
-
-                {/* Upcoming */}
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold font-display text-foreground">Upcoming Appointments</h3>
-                  {upcomingAppts.length > 0 && (
-                    <span className="rounded-full bg-primary/10 text-primary text-[11px] font-bold px-2 py-0.5">
-                      {upcomingAppts.length}
-                    </span>
-                  )}
+            {/* Missed / Overdue */}
+            {missedOverdueAppts.length > 0 && (
+              <div className="mt-5 pt-4 border-t border-orange-100">
+                <div className="flex items-center gap-2 mb-3">
+                  <AlertTriangle className="h-3.5 w-3.5 text-orange-500" />
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-orange-600">
+                    Missed / Overdue
+                  </h4>
+                  <span className="ml-auto rounded-full bg-orange-100 text-orange-600 text-[11px] font-bold px-2 py-0.5">
+                    {missedOverdueAppts.length}
+                  </span>
                 </div>
                 <div className="space-y-2">
-                  {upcomingAppts.slice(0, 3).map((appt) => {
-                    const d = new Date(appt.appointment_date.includes("+") || appt.appointment_date.includes("Z") ? appt.appointment_date : appt.appointment_date + "+03:00");
+                  {missedOverdueAppts.slice(0, 3).map((appt) => {
+                    const d = parseKenyaDate(appt.appointment_date);
+                    const isMissed = appt.status === 'missed';
                     return (
                       <button key={appt.id} onClick={() => setSelectedAppt(appt)}
-                        className="w-full flex items-center gap-3 rounded-2xl bg-primary/5 hover:bg-primary/10 border border-primary/10 hover:border-primary/20 p-3 transition-all text-left">
-                        <div className="flex-shrink-0 flex flex-col items-center justify-center w-10 h-10 rounded-xl bg-white shadow-sm border border-primary/10">
-                          <span className="text-sm font-black leading-none text-primary">{d.getDate()}</span>
-                          <span className="text-[8px] font-bold uppercase tracking-wider text-primary/60">
+                        className="w-full flex items-center gap-3 rounded-2xl bg-orange-50 hover:bg-orange-100 border border-orange-200 hover:border-orange-300 p-3 transition-all text-left">
+                        <div className="flex-shrink-0 flex flex-col items-center justify-center w-10 h-10 rounded-xl bg-white shadow-sm border border-orange-200">
+                          <span className="text-sm font-black leading-none text-orange-500">{d.getDate()}</span>
+                          <span className="text-[8px] font-bold uppercase tracking-wider text-orange-400">
                             {d.toLocaleDateString('en-US', { month: 'short' })}
                           </span>
                         </div>
@@ -446,214 +433,66 @@ const PatientDashboard = () => {
                           </p>
                           <p className="text-xs text-muted-foreground">{appt.type}</p>
                         </div>
-                        <div className="flex items-center gap-1 text-xs text-primary font-semibold flex-shrink-0">
-                          <Clock className="h-3 w-3" />
-                          {d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                        <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                          <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold ${
+                            isMissed
+                              ? 'bg-orange-50 text-orange-600 border-orange-200'
+                              : 'bg-amber-50 text-amber-600 border-amber-200'
+                          }`}>
+                            {isMissed ? <AlertTriangle className="h-2.5 w-2.5" /> : <AlertCircle className="h-2.5 w-2.5" />}
+                            {isMissed ? 'Missed' : 'Overdue'}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground">
+                            {d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                          </span>
                         </div>
                       </button>
                     );
                   })}
-                  {upcomingAppts.length === 0 && (
-                    <div className="flex flex-col items-center justify-center py-6 text-center">
-                      <CalendarDays className="h-7 w-7 text-muted-foreground/30 mb-2" />
-                      <p className="text-sm text-muted-foreground">No upcoming appointments.</p>
-                      <p className="text-xs text-muted-foreground/60 mt-0.5">Your doctor will schedule one for you.</p>
-                    </div>
+                  {missedOverdueAppts.length > 3 && (
+                    <p className="text-center text-[11px] text-orange-500 font-medium pt-1">
+                      +{missedOverdueAppts.length - 3} more — contact your doctor
+                    </p>
                   )}
                 </div>
-
-                {/* Missed / Overdue */}
-                {missedOverdueAppts.length > 0 && (
-                  <div className="mt-5 pt-4 border-t border-orange-100">
-                    <div className="flex items-center gap-2 mb-3">
-                      <AlertTriangle className="h-3.5 w-3.5 text-orange-500" />
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-orange-600">
-                        Missed / Overdue
-                      </h4>
-                      <span className="ml-auto rounded-full bg-orange-100 text-orange-600 text-[11px] font-bold px-2 py-0.5">
-                        {missedOverdueAppts.length}
-                      </span>
-                    </div>
-                    <div className="space-y-2">
-                      {missedOverdueAppts.slice(0, 3).map((appt) => {
-                        const d = new Date(appt.appointment_date.includes("+") || appt.appointment_date.includes("Z") ? appt.appointment_date : appt.appointment_date + "+03:00");
-                        const isMissed = appt.status === 'missed';
-                        return (
-                          <button key={appt.id} onClick={() => setSelectedAppt(appt)}
-                            className="w-full flex items-center gap-3 rounded-2xl bg-orange-50 hover:bg-orange-100 border border-orange-200 hover:border-orange-300 p-3 transition-all text-left">
-                            <div className="flex-shrink-0 flex flex-col items-center justify-center w-10 h-10 rounded-xl bg-white shadow-sm border border-orange-200">
-                              <span className="text-sm font-black leading-none text-orange-500">{d.getDate()}</span>
-                              <span className="text-[8px] font-bold uppercase tracking-wider text-orange-400">
-                                {d.toLocaleDateString('en-US', { month: 'short' })}
-                              </span>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-semibold text-foreground truncate">
-                                {appt.doctor_name ? `Dr. ${appt.doctor_name}` : 'Doctor'}
-                              </p>
-                              <p className="text-xs text-muted-foreground">{appt.type}</p>
-                            </div>
-                            <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                              <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold ${
-                                isMissed
-                                  ? 'bg-orange-50 text-orange-600 border-orange-200'
-                                  : 'bg-amber-50 text-amber-600 border-amber-200'
-                              }`}>
-                                {isMissed ? <AlertTriangle className="h-2.5 w-2.5" /> : <AlertCircle className="h-2.5 w-2.5" />}
-                                {isMissed ? 'Missed' : 'Overdue'}
-                              </span>
-                              <span className="text-[10px] text-muted-foreground">
-                                {d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                              </span>
-                            </div>
-                          </button>
-                        );
-                      })}
-                      {missedOverdueAppts.length > 3 && (
-                        <p className="text-center text-[11px] text-orange-500 font-medium pt-1">
-                          +{missedOverdueAppts.length - 3} more — contact your doctor
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </motion.div>
+              </div>
             )}
-          </div>
+          </motion.div>
+        )}
+      </div>
 
-          {/* Medication List */}
-          {isEnabled('Medication Schedule') && (
-            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-semibold font-display text-foreground">My Medications</h3>
-                {totalMeds > 0 && (
-                  <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-                    takenMeds === totalMeds
-                      ? 'bg-success/10 text-success'
-                      : 'bg-warning/10 text-warning'
-                  }`}>
-                    {takenMeds}/{totalMeds} taken today
-                  </span>
-                )}
-              </div>
-              <MedicationList
-                medications={medications}
-                onToggle={handleToggleMed}
-                role="patient"
-                togglingIds={togglingMeds}
-              />
-            </motion.div>
-          )}
-        </>
-      ) : (
-        // History View
-        <div className="space-y-6">
-          {loadingHistory ? (
-            <div className="py-16 flex justify-center">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      {/* Medication List with History Button */}
+      {isEnabled('Medication Schedule') && (
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-semibold font-display text-foreground">My Medications</h3>
+              {totalMeds > 0 && (
+                <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+                  takenMeds === totalMeds
+                    ? 'bg-success/10 text-success'
+                    : 'bg-warning/10 text-warning'
+                }`}>
+                  {takenMeds}/{totalMeds} taken today
+                </span>
+              )}
             </div>
-          ) : (
-            <>
-              {/* Completed Medications */}
-              <div>
-                <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                  Completed Medications
-                </h3>
-                {completedMedications.length === 0 ? (
-                  <div className="rounded-lg border border-border bg-card p-8 text-center">
-                    <Pill className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-                    <p className="text-sm text-muted-foreground">No completed medications yet.</p>
-                    <p className="text-xs text-muted-foreground/60 mt-1">Completed medications will appear here.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {completedMedications.map((med) => (
-                      <div key={med.id} className="rounded-lg border border-emerald-200 bg-emerald-50/30 p-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="font-semibold text-foreground line-through text-emerald-600">{med.name}</p>
-                            <p className="text-xs text-muted-foreground mt-1">{med.dosage} · {med.frequency}</p>
-                            {med.time && <p className="text-xs text-muted-foreground">Time: {med.time}</p>}
-                            {med.completed_at && (
-                              <p className="text-[10px] text-emerald-600 mt-1">
-                                Completed on: {new Date(med.completed_at).toLocaleDateString()}
-                              </p>
-                            )}
-                          </div>
-                          <CheckCircle2 className="h-6 w-6 text-emerald-500" />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Past Appointments */}
-              <div>
-                <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                  <CalendarDays className="h-4 w-4 text-primary" />
-                  Past Appointments
-                </h3>
-                {pastAppointments.length === 0 ? (
-                  <div className="rounded-lg border border-border bg-card p-8 text-center">
-                    <CalendarDays className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-                    <p className="text-sm text-muted-foreground">No past appointments.</p>
-                    <p className="text-xs text-muted-foreground/60 mt-1">Completed or cancelled appointments will appear here.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {pastAppointments.map((appt) => (
-                      <div key={appt.id} className="rounded-lg border border-border bg-card p-4 hover:shadow-md transition-shadow">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                          <div>
-                            <p className="font-semibold text-foreground text-lg">{appt.type}</p>
-                            <p className="text-sm text-muted-foreground mt-1">
-                              {new Date(appt.appointment_date.includes("+") || appt.appointment_date.includes("Z") ? appt.appointment_date : appt.appointment_date + "+03:00").toLocaleDateString('en-US', { 
-                                weekday: 'long', 
-                                month: 'long', 
-                                day: 'numeric',
-                                year: 'numeric'
-                              })} at {new Date(appt.appointment_date.includes("+") || appt.appointment_date.includes("Z") ? appt.appointment_date : appt.appointment_date + "+03:00").toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
-                            </p>
-                            {appt.doctor_name && (
-                              <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1">
-                                <Stethoscope className="h-3 w-3" />
-                                Dr. {appt.doctor_name}
-                              </p>
-                            )}
-                            {appt.notes && (
-                              <p className="text-xs text-muted-foreground mt-2 p-2 bg-muted/30 rounded-lg">
-                                <span className="font-semibold">Notes:</span> {appt.notes}
-                              </p>
-                            )}
-                          </div>
-                          <div className="flex flex-col items-end gap-2">
-                            <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${
-                              appt.status === 'completed' ? 'bg-emerald-100 text-emerald-700' :
-                              appt.status === 'cancelled' ? 'bg-red-100 text-red-700' :
-                              'bg-orange-100 text-orange-700'
-                            }`}>
-                              {appt.status === 'completed' && <CheckCircle2 className="h-3 w-3" />}
-                              {appt.status === 'cancelled' && <XCircle className="h-3 w-3" />}
-                              {appt.status.charAt(0).toUpperCase() + appt.status.slice(1)}
-                            </span>
-                            <button
-                              onClick={() => setSelectedAppt(appt)}
-                              className="text-xs text-primary hover:underline"
-                            >
-                              View Details
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-        </div>
+            <button
+              onClick={() => setShowHistory(true)}
+              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-primary/10 to-primary/5 px-3 py-1.5 text-xs font-semibold text-primary hover:from-primary/20 hover:to-primary/10 transition-all"
+            >
+              <History className="h-3.5 w-3.5" />
+              View Full History
+              <ChevronRight className="h-3 w-3" />
+            </button>
+          </div>
+          <MedicationList
+            medications={medications}
+            onToggle={handleToggleMed}
+            role="patient"
+            togglingIds={togglingMeds}
+          />
+        </motion.div>
       )}
 
       {/* Appointment detail modal */}
@@ -663,117 +502,235 @@ const PatientDashboard = () => {
         )}
       </AnimatePresence>
 
-      {/* ── Health History Slide-over ── */}
+      {/* Health History Slide-over Panel */}
       <AnimatePresence>
         {showHistory && (
           <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onClick={() => setShowHistory(false)}
-              className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" />
             <motion.div
-              initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => setShowHistory(false)}
+              className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ x: '100%', opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: '100%', opacity: 0 }}
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              className="fixed right-0 top-0 z-50 h-full w-full max-w-md bg-card shadow-2xl flex flex-col">
-
+              className="fixed right-0 top-0 z-50 h-full w-full max-w-md bg-gradient-to-b from-white to-gray-50 shadow-2xl flex flex-col"
+            >
               {/* Header */}
-              <div className="flex items-center justify-between px-5 py-4 border-b border-border flex-shrink-0">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-                    <FileText className="h-4 w-4 text-primary" />
+              <div className="relative bg-gradient-to-r from-primary to-primary/80 px-6 py-5 flex-shrink-0">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20">
+                      <History className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-white/80">My Health Journey</p>
+                      <p className="text-lg font-black text-white">Complete History</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-bold text-foreground">My Health History</p>
-                    <p className="text-xs text-muted-foreground">Complete record of your care</p>
-                  </div>
+                  <button
+                    onClick={() => setShowHistory(false)}
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-white/70 hover:bg-white/30 hover:text-white transition-all"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
                 </div>
-                <button onClick={() => setShowHistory(false)}
-                  className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-all">
-                  <X className="h-4 w-4" />
-                </button>
+                <p className="text-xs text-white/70 mt-3 ml-13">
+                  Your complete medical record at a glance
+                </p>
+              </div>
+
+              {/* Stats Summary */}
+              <div className="grid grid-cols-2 gap-3 p-4 bg-gray-50/50 border-b border-gray-100 flex-shrink-0">
+                <div className="rounded-xl bg-white p-3 shadow-sm">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Total Appointments</p>
+                  <p className="text-2xl font-bold text-primary">{appointments.length}</p>
+                </div>
+                <div className="rounded-xl bg-white p-3 shadow-sm">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Total Medications</p>
+                  <p className="text-2xl font-bold text-primary">{medications.length}</p>
+                </div>
               </div>
 
               {/* Tabs */}
-              <div className="flex gap-1 px-4 py-2.5 border-b border-border/50 bg-muted/20 flex-shrink-0">
+              <div className="flex gap-1 px-4 py-2 bg-white border-b border-gray-100 flex-shrink-0">
                 {(['appointments', 'medications'] as const).map(tab => (
-                  <button key={tab} onClick={() => setHistoryTab(tab)}
-                    className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold capitalize transition-all ${
-                      historyTab === tab ? 'bg-card border border-border text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-                    }`}>
-                    {tab === 'appointments' ? <CalendarDays className="h-3 w-3" /> : <Pill className="h-3 w-3" />}
+                  <button
+                    key={tab}
+                    onClick={() => setHistoryTab(tab)}
+                    className={`flex-1 flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold capitalize transition-all ${
+                      historyTab === tab
+                        ? 'bg-primary text-white shadow-lg shadow-primary/25'
+                        : 'bg-gray-100 text-muted-foreground hover:bg-gray-200'
+                    }`}
+                  >
+                    {tab === 'appointments' ? <CalendarDays className="h-4 w-4" /> : <Pill className="h-4 w-4" />}
                     {tab}
-                    <span className={`ml-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${historyTab === tab ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
+                    <span className={`ml-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                      historyTab === tab ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-600'
+                    }`}>
                       {tab === 'appointments' ? appointments.length : medications.length}
                     </span>
                   </button>
                 ))}
               </div>
 
-              {/* Content */}
+              {/* Scrollable Content */}
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
-
-                {historyTab === 'appointments' && (appointments.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-16 text-center">
-                    <CalendarDays className="h-10 w-10 text-muted-foreground/20 mb-3" />
-                    <p className="text-sm text-muted-foreground">No appointments yet.</p>
-                  </div>
-                ) : appointments.map((appt: any) => {
-                  const d = new Date(appt.appointment_date.includes('+') || appt.appointment_date.includes('Z') ? appt.appointment_date : appt.appointment_date + '+03:00');
-                  const cfg = STATUS_CONFIG[appt.status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.scheduled;
-                  return (
-                    <button key={appt.id} onClick={() => { setShowHistory(false); setSelectedAppt(appt); }}
-                      className={`w-full flex items-center gap-3 rounded-xl border p-3 text-left hover:border-primary/30 hover:bg-primary/5 transition-all ${cfg.border} ${cfg.bg}`}>
-                      <div className={`flex-shrink-0 flex flex-col items-center justify-center w-10 h-10 rounded-xl bg-white shadow-sm border ${cfg.border}`}>
-                        <span className={`text-sm font-black leading-none ${cfg.text}`}>{d.getDate()}</span>
-                        <span className={`text-[8px] font-bold uppercase ${cfg.text} opacity-70`}>{d.toLocaleDateString('en-US', { month: 'short' })}</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-foreground truncate">{appt.doctor_name ? `Dr. ${appt.doctor_name}` : 'Doctor'}</p>
-                        <p className="text-xs text-muted-foreground">{appt.type}</p>
-                        <p className="text-[11px] text-muted-foreground mt-0.5">
-                          {d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} · {d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
-                        </p>
-                      </div>
-                      <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold flex-shrink-0 ${cfg.bg} ${cfg.text} ${cfg.border}`}>
-                        <span className={`h-1.5 w-1.5 rounded-full ${cfg.dot}`} />{cfg.label}
-                      </span>
-                    </button>
-                  );
-                }))}
-
-                {historyTab === 'medications' && (medications.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-16 text-center">
-                    <Pill className="h-10 w-10 text-muted-foreground/20 mb-3" />
-                    <p className="text-sm text-muted-foreground">No medications prescribed yet.</p>
-                  </div>
-                ) : medications.map((med: any) => (
-                  <div key={med.id} className={`rounded-xl border p-3 ${
-                    med.completed ? 'border-emerald-200/60 bg-emerald-50/50' :
-                    med.taken_today ? 'border-success/20 bg-success/5' : 'border-destructive/20 bg-destructive/5'
-                  }`}>
-                    <div className="flex items-start gap-3">
-                      <div className={`flex h-8 w-8 items-center justify-center rounded-full flex-shrink-0 ${
-                        med.completed ? 'bg-emerald-100 text-emerald-600' :
-                        med.taken_today ? 'bg-success/20 text-success' : 'bg-destructive/20 text-destructive'
-                      }`}><Pill className="h-3.5 w-3.5" /></div>
-                      <div className="flex-1 min-w-0">
-                        <p className={`text-sm font-semibold ${med.completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>{med.name}</p>
-                        <p className="text-xs text-muted-foreground">{med.dosage} · {med.frequency}</p>
-                        {med.time && <p className="text-[11px] text-muted-foreground mt-0.5">Time: {med.time}</p>}
-                        {med.refill_date && <p className="text-[11px] text-amber-600 mt-0.5">Refill: {new Date(med.refill_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>}
-                      </div>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${
-                        med.completed ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' :
-                        med.taken_today ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'
-                      }`}>{med.completed ? 'Completed' : med.taken_today ? 'Taken' : 'Pending'}</span>
+                {historyTab === 'appointments' && (
+                  appointments.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-16 text-center">
+                      <CalendarDays className="h-12 w-12 text-muted-foreground/30 mb-3" />
+                      <p className="text-sm font-medium text-muted-foreground">No appointments yet</p>
+                      <p className="text-xs text-muted-foreground/60 mt-1">Your appointment history will appear here</p>
                     </div>
-                  </div>
-                )))}
+                  ) : (
+                    appointments.map((appt: any) => {
+                      const d = parseKenyaDate(appt.appointment_date);
+                      const cfg = STATUS_CONFIG[appt.status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.scheduled;
+                      return (
+                        <motion.button
+                          key={appt.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          whileHover={{ scale: 1.02 }}
+                          onClick={() => { setShowHistory(false); setSelectedAppt(appt); }}
+                          className={`w-full flex items-start gap-3 rounded-xl border-2 p-4 text-left transition-all hover:shadow-md ${
+                            appt.status === 'completed' ? 'border-emerald-200 bg-emerald-50/30 hover:bg-emerald-50' :
+                            appt.status === 'cancelled' ? 'border-red-200 bg-red-50/30 hover:bg-red-50' :
+                            appt.status === 'missed' ? 'border-orange-200 bg-orange-50/30 hover:bg-orange-50' :
+                            'border-primary/20 bg-primary/5 hover:bg-primary/10'
+                          }`}
+                        >
+                          <div className={`flex-shrink-0 flex flex-col items-center justify-center w-12 h-12 rounded-xl bg-white shadow-sm border-2 ${
+                            appt.status === 'completed' ? 'border-emerald-200' :
+                            appt.status === 'cancelled' ? 'border-red-200' :
+                            appt.status === 'missed' ? 'border-orange-200' :
+                            'border-primary/20'
+                          }`}>
+                            <span className={`text-base font-black leading-none ${
+                              appt.status === 'completed' ? 'text-emerald-600' :
+                              appt.status === 'cancelled' ? 'text-red-500' :
+                              appt.status === 'missed' ? 'text-orange-500' :
+                              'text-primary'
+                            }`}>{d.getDate()}</span>
+                            <span className="text-[8px] font-bold uppercase text-muted-foreground">
+                              {d.toLocaleDateString('en-US', { month: 'short' })}
+                            </span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap mb-1">
+                              <p className="font-bold text-foreground">{appt.type}</p>
+                              <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                                appt.status === 'completed' ? 'bg-emerald-100 text-emerald-700' :
+                                appt.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                                appt.status === 'missed' ? 'bg-orange-100 text-orange-700' :
+                                'bg-primary/10 text-primary'
+                              }`}>
+                                {appt.status === 'completed' && <CheckCircle2 className="h-2.5 w-2.5" />}
+                                {appt.status === 'cancelled' && <XCircle className="h-2.5 w-2.5" />}
+                                {appt.status}
+                              </span>
+                            </div>
+                            {appt.doctor_name && (
+                              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                <Stethoscope className="h-3 w-3" />
+                                Dr. {appt.doctor_name}
+                              </p>
+                            )}
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} · {d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                            </p>
+                            {appt.notes && (
+                              <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
+                                <span className="font-semibold">Note:</span> {appt.notes}
+                              </p>
+                            )}
+                          </div>
+                          <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-2" />
+                        </motion.button>
+                      );
+                    })
+                  )
+                )}
+
+                {historyTab === 'medications' && (
+                  medications.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-16 text-center">
+                      <Pill className="h-12 w-12 text-muted-foreground/30 mb-3" />
+                      <p className="text-sm font-medium text-muted-foreground">No medications yet</p>
+                      <p className="text-xs text-muted-foreground/60 mt-1">Your medication history will appear here</p>
+                    </div>
+                  ) : (
+                    medications.map((med: any, idx: number) => (
+                      <motion.div
+                        key={med.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: idx * 0.05 }}
+                        className={`rounded-xl border-2 p-4 ${
+                          med.completed
+                            ? 'border-emerald-200 bg-emerald-50/30'
+                            : med.taken_today
+                            ? 'border-success/30 bg-success/5'
+                            : 'border-destructive/30 bg-destructive/5'
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className={`flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0 ${
+                            med.completed
+                              ? 'bg-emerald-100 text-emerald-600'
+                              : med.taken_today
+                              ? 'bg-success/20 text-success'
+                              : 'bg-destructive/20 text-destructive'
+                          }`}>
+                            <Pill className="h-5 w-5" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between flex-wrap gap-2 mb-1">
+                              <p className={`font-bold ${
+                                med.completed ? 'line-through text-muted-foreground' : 'text-foreground'
+                              }`}>{med.name}</p>
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                med.completed
+                                  ? 'bg-emerald-100 text-emerald-700'
+                                  : med.taken_today
+                                  ? 'bg-success/10 text-success'
+                                  : 'bg-destructive/10 text-destructive'
+                              }`}>
+                                {med.completed ? 'Completed' : med.taken_today ? 'Taken Today' : 'Pending'}
+                              </span>
+                            </div>
+                            <p className="text-xs text-muted-foreground">{med.dosage} · {med.frequency}</p>
+                            {med.time && (
+                              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                {med.time}
+                              </p>
+                            )}
+                            {med.refill_date && (
+                              <p className="text-[11px] text-amber-600 mt-1 flex items-center gap-1">
+                                <CalendarDays className="h-3 w-3" />
+                                Refill: {new Date(med.refill_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))
+                  )
+                )}
               </div>
 
               {/* Footer */}
-              <div className="px-4 py-3 border-t border-border bg-muted/10 flex-shrink-0">
+              <div className="px-4 py-3 border-t border-gray-100 bg-white flex-shrink-0">
                 <p className="text-[11px] text-center text-muted-foreground">
-                  {historyTab === 'appointments' ? `${appointments.length} total appointments` : `${medications.length} total medications`}
+                  Showing your complete health history • Last updated {new Date().toLocaleDateString()}
                 </p>
               </div>
             </motion.div>
