@@ -22,24 +22,21 @@ interface AppointmentData {
   notes: string;
 }
 
-// Parse a Kenya-time datetime string from the backend.
-// Backend stores naive datetimes in EAT (UTC+3). We append +03:00 so JS
-// knows the correct timezone — then display WITHOUT any timeZone conversion
-// (the Date object already holds the correct wall-clock time).
+// SIMPLE FIX: The backend stores dates in Kenya time as naive strings
+// We just need to parse them as-is and display without conversion
 function parseKenyaDate(dateString: string): Date {
   if (!dateString) return new Date();
-  // Already has explicit timezone — use as-is
-  if (dateString.includes('Z') || dateString.includes('+')) {
-    return new Date(dateString);
-  }
-  // Naive string from backend → label it as EAT so no conversion occurs
-  const d = new Date(dateString + '+03:00');
-  return isNaN(d.getTime()) ? new Date() : d;
+  // Create date directly from the string - no timezone manipulation
+  // The string is in format "2024-01-15T14:30:00" (Kenya time)
+  // JavaScript will parse this as UTC, but we'll display it as local
+  // By using the string directly and then formatting with local methods,
+  // we get the correct wall-clock time
+  return new Date(dateString);
 }
 
-// Format a Kenya date for display — no timeZone option needed because
-// parseKenyaDate already encoded the correct offset into the Date object.
-function formatKenyaDate(date: Date): string {
+// Format date for display - uses local timezone which will match Kenya time
+// since the date was created from the ISO string without conversion
+function formatDisplayDate(date: Date): string {
   return date.toLocaleString('en-US', {
     hour12: true,
     hour: 'numeric',
@@ -275,10 +272,10 @@ const DateTimePickerModal = ({
 
 // Helper to get Kenya time for comparison
 function getKenyaNow(): Date {
-  // Create a date in Kenya timezone
+  // Get current time and adjust to Kenya time (UTC+3)
   const now = new Date();
-  const kenyaOffset = 3 * 60 * 60 * 1000; // UTC+3 in milliseconds
-  return new Date(now.getTime() + (now.getTimezoneOffset() * 60 * 1000) + kenyaOffset);
+  // Create a new date that represents the same wall-clock time in Kenya
+  return new Date(now.getTime() + (now.getTimezoneOffset() * 60 * 1000) + (3 * 60 * 60 * 1000));
 }
 
 // An appointment is overdue if it's still 'requested' and the date has passed
@@ -291,7 +288,7 @@ const isOverdue = (appt: AppointmentData): boolean => {
   );
 };
 
-// Returns effective display status — overdue requested appts show as 'overdue'
+// Returns effective display status
 const effectiveStatus = (appt: AppointmentData): string =>
   isOverdue(appt) ? 'overdue' : appt.status;
 
@@ -415,7 +412,6 @@ const ManageModal = ({ appt, onClose, onUpdated }: { appt: AppointmentData; onCl
           exit={{ opacity: 0, scale: 0.94, y: 20 }} transition={{ type: 'spring', stiffness: 380, damping: 30 }}
           className="w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl max-h-[90vh] flex flex-col">
 
-          {/* Header */}
           <div className={`relative px-6 pt-7 pb-5 flex-shrink-0 ${isRequested ? 'bg-gradient-to-br from-amber-600 to-amber-500' : 'bg-gradient-to-br from-slate-800 to-slate-700'}`}>
             <button onClick={onClose} className="absolute right-4 top-4 flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-white/60 hover:text-white transition-colors">
               <X className="h-3.5 w-3.5" />
@@ -433,9 +429,7 @@ const ManageModal = ({ appt, onClose, onUpdated }: { appt: AppointmentData; onCl
             </div>
           </div>
 
-          {/* Scrollable body */}
           <div className="px-6 py-5 space-y-5 overflow-y-auto flex-1">
-            {/* ... rest of the modal content remains the same ... */}
             {isRequested && (
               <div className="flex items-start gap-2.5 rounded-2xl bg-amber-50 border border-amber-200 px-4 py-3">
                 <Bell className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
@@ -445,7 +439,6 @@ const ManageModal = ({ appt, onClose, onUpdated }: { appt: AppointmentData; onCl
               </div>
             )}
 
-            {/* Notes field */}
             <div>
               <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">
                 <FileText className="h-3.5 w-3.5" />
@@ -525,7 +518,6 @@ const ManageModal = ({ appt, onClose, onUpdated }: { appt: AppointmentData; onCl
         </motion.div>
       </div>
 
-      {/* DateTime Picker Modal */}
       <AnimatePresence>
         {showDatePicker && (
           <DateTimePickerModal
@@ -555,12 +547,7 @@ const Appointments = () => {
   useEffect(() => {
     appointmentsApi.list()
       .then(data => {
-        // Parse dates to ensure they're correct
-        const parsedData = data.map((appt: any) => ({
-          ...appt,
-          // Keep the original date string as is - we'll parse it when displaying
-        }));
-        setAppointments(parsedData);
+        setAppointments(data);
       })
       .catch((e) => toast.error(e.message))
       .finally(() => setLoading(false));

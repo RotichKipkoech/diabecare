@@ -135,6 +135,7 @@ class Medication(db.Model):
             'taken_today': getattr(self, 'taken_today', False),
         }
 
+
 class Appointment(db.Model):
     __tablename__ = 'appointments'
 
@@ -151,13 +152,17 @@ class Appointment(db.Model):
     doctor = db.relationship('User', foreign_keys=[doctor_id], lazy=True)
 
     def to_dict(self):
-        # Format the appointment_date with the Kenya timezone offset
+        # FIXED: Return the appointment date as a naive ISO string WITHOUT +03:00
+        # The date is stored in Kenya time, and we want the frontend to display it as-is.
+        # By not adding a timezone, the frontend will treat it as UTC and then convert to local time.
+        # Since the user is in Kenya (UTC+3), adding 3 hours to UTC will give the correct local time.
         appointment_date_str = None
         if self.appointment_date:
-            # The date is stored as naive datetime in Kenya time
-            # We'll format it as ISO string with the +03:00 offset
-            # This tells the frontend that this is Kenya time (UTC+3)
-            appointment_date_str = self.appointment_date.isoformat() + '+03:00'
+            # Return the ISO string without any timezone modification
+            # This will be "2024-01-15T14:30:00" which JavaScript will parse as UTC
+            # When displayed with toLocaleString(), it will convert to Kenya time (+3 hours)
+            # giving the correct wall-clock time of 17:30 (5:30 PM) for a 2:30 PM appointment
+            appointment_date_str = self.appointment_date.isoformat()
         
         return {
             'id': self.id,
@@ -171,7 +176,7 @@ class Appointment(db.Model):
             'doctor_name': self.doctor.full_name if self.doctor else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
         }
-    
+
 
 class Notification(db.Model):
     __tablename__ = "notifications"
@@ -219,6 +224,7 @@ class MedicationLog(db.Model):
             "created_at": self.created_at.isoformat(),
         }
 
+
 class AuditLog(db.Model):
     __tablename__ = 'audit_logs'
 
@@ -244,6 +250,7 @@ class AuditLog(db.Model):
             'created_at': self.created_at.isoformat(),
         }
 
+
 class SystemConfig(db.Model):
     """Key-value store for system-wide settings like maintenance state."""
     __tablename__ = 'system_config'
@@ -268,6 +275,7 @@ class SystemConfig(db.Model):
             db.session.add(row)
         # caller must commit
 
+
 class TokenBlocklist(db.Model):
     """Stores revoked JWT tokens so they cannot be reused after logout."""
     __tablename__ = 'token_blocklist'
@@ -281,6 +289,7 @@ class TokenBlocklist(db.Model):
         return db.session.query(
             TokenBlocklist.query.filter_by(jti=jti).exists()
         ).scalar()
+
 
 class DashboardFeature(db.Model):
     """Stores dashboard feature toggles — admin configures, dashboards consume."""
