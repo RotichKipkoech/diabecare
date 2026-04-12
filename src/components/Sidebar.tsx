@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Users, Pill, CalendarDays, UserPlus,
   Heart, UserCog, Settings2, UserCircle, UserCheck,
   Settings, ClipboardList, PlusCircle, User, FileBarChart2,
-  Menu, X, MessageSquare, Radio,
+  Menu, X, MessageSquare, Radio, Stethoscope,
 } from 'lucide-react';
 import { useAuth, UserRole } from '@/contexts/AuthContext';
 
@@ -26,6 +26,7 @@ const navItems: NavItem[] = [
   { path: '/broadcast',            label: 'Broadcast',            icon: Radio,           roles: ['admin', 'doctor'] },
   { path: '/sms-logs',             label: 'SMS Logs',             icon: MessageSquare,   roles: ['admin'] },
   { path: '/reassign-patients',     label: 'Reassign Patients',    icon: UserCheck,       roles: ['admin'] },
+  { path: '/doctor-management',    label: 'Doctor Management',    icon: Stethoscope,     roles: ['admin'] },
   { path: '/my-profile',           label: 'My Profile',           icon: User,            roles: ['admin', 'doctor'] },
   { path: '/settings',             label: 'Settings',             icon: Settings,        roles: ['admin', 'doctor', 'patient'] },
 ];

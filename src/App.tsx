@@ -27,6 +27,7 @@ import HealthReport from "./pages/HealthReport";
 import SmsLogs from "./pages/SmsLogs";
 import Broadcast from "./pages/Broadcast";
 import ReassignPatients from "./pages/ReassignPatients";
+import AdminDoctorManagement from "./pages/AdminDoctorManagement";
 import { ReactNode } from "react";
 import { Loader2 } from "lucide-react";
 
@@ -78,6 +79,7 @@ const AppRoutes = () => (
     <Route path="/sms-logs" element={<ProtectedRoute allowedRoles={['admin']}><SmsLogs /></ProtectedRoute>} />
     <Route path="/broadcast" element={<ProtectedRoute allowedRoles={['admin', 'doctor']}><Broadcast /></ProtectedRoute>} />
     <Route path="/reassign-patients" element={<ProtectedRoute allowedRoles={['admin']}><ReassignPatients /></ProtectedRoute>} />
+    <Route path="/doctor-management" element={<ProtectedRoute allowedRoles={['admin']}><AdminDoctorManagement /></ProtectedRoute>} />
     <Route path="*" element={<NotFound />} />
   </Routes>
 );

@@ -151,11 +151,19 @@ class Appointment(db.Model):
     doctor = db.relationship('User', foreign_keys=[doctor_id], lazy=True)
 
     def to_dict(self):
+        # Format the appointment_date with the Kenya timezone offset
+        appointment_date_str = None
+        if self.appointment_date:
+            # The date is stored as naive datetime in Kenya time
+            # We'll format it as ISO string with the +03:00 offset
+            # This tells the frontend that this is Kenya time (UTC+3)
+            appointment_date_str = self.appointment_date.isoformat() + '+03:00'
+        
         return {
             'id': self.id,
             'patient_id': self.patient_id,
             'doctor_id': self.doctor_id,
-            'appointment_date': self.appointment_date.isoformat() if self.appointment_date else None,
+            'appointment_date': appointment_date_str,
             'type': self.type,
             'status': self.status,
             'notes': self.notes or '',
@@ -163,7 +171,7 @@ class Appointment(db.Model):
             'doctor_name': self.doctor.full_name if self.doctor else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
         }
-
+    
 
 class Notification(db.Model):
     __tablename__ = "notifications"

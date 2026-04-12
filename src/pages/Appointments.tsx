@@ -22,6 +22,37 @@ interface AppointmentData {
   notes: string;
 }
 
+// Helper function to parse date from backend correctly
+// The backend stores dates in Kenya time (UTC+3)
+function parseKenyaDate(dateString: string): Date {
+  if (!dateString) return new Date();
+  // If the string already has timezone info, use it directly
+  if (dateString.includes('Z') || dateString.includes('+')) {
+    return new Date(dateString);
+  }
+  // Otherwise, append 'T00:00:00' if it's just a date, or assume it's already in Kenya time
+  // We'll create a date and then adjust for display
+  const date = new Date(dateString);
+  // Check if the date is valid
+  if (isNaN(date.getTime())) {
+    return new Date();
+  }
+  return date;
+}
+
+// Helper to format date for display in Kenya time
+function formatKenyaDate(date: Date): string {
+  return date.toLocaleString('en-US', {
+    timeZone: 'Africa/Nairobi',
+    hour12: true,
+    hour: 'numeric',
+    minute: '2-digit',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
 const STATUS_CONFIG = {
   scheduled: {
     bg: 'bg-primary/10', text: 'text-primary', border: 'border-primary/20',
@@ -165,15 +196,7 @@ const DateTimePickerModal = ({
       const combined = new Date(tempDate);
       combined.setHours(timeDate.getHours(), timeDate.getMinutes());
       setTempDate(combined);
-      // Auto-confirm after time selection
       onChange(combined);
-      onClose();
-    }
-  };
-
-  const handleConfirm = () => {
-    if (tempDate) {
-      onChange(tempDate);
       onClose();
     }
   };
@@ -244,13 +267,6 @@ const DateTimePickerModal = ({
                 >
                   Back
                 </button>
-                <button
-                  onClick={handleConfirm}
-                  disabled={!tempDate}
-                  className="flex-1 rounded-2xl bg-primary py-3 text-sm font-bold text-white shadow-lg shadow-primary/25 hover:bg-primary/90 transition-all disabled:opacity-50"
-                >
-                  Confirm
-                </button>
               </div>
             </>
           )}
@@ -260,11 +276,21 @@ const DateTimePickerModal = ({
   );
 };
 
+// Helper to get Kenya time for comparison
+function getKenyaNow(): Date {
+  // Create a date in Kenya timezone
+  const now = new Date();
+  const kenyaOffset = 3 * 60 * 60 * 1000; // UTC+3 in milliseconds
+  return new Date(now.getTime() + (now.getTimezoneOffset() * 60 * 1000) + kenyaOffset);
+}
+
 // An appointment is overdue if it's still 'requested' and the date has passed
 const isOverdue = (appt: AppointmentData): boolean => {
+  const apptDate = parseKenyaDate(appt.appointment_date);
+  const now = getKenyaNow();
   return (
     (appt.status === 'requested' || appt.status === 'scheduled') &&
-    new Date(appt.appointment_date) < new Date()
+    apptDate < now
   );
 };
 
@@ -283,9 +309,9 @@ const StatusBadge = ({ status }: { status: string }) => {
 };
 
 const AppointmentDetailModal = ({ appt, onClose }: { appt: AppointmentData; onClose: () => void }) => {
-  const utcStr = appt.appointment_date;
-  const d = new Date(utcStr);
+  const d = parseKenyaDate(appt.appointment_date);
   const cfg = STATUS_CONFIG[appt.status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.scheduled;
+  
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <motion.div initial={{ opacity: 0, scale: 0.94, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -298,7 +324,9 @@ const AppointmentDetailModal = ({ appt, onClose }: { appt: AppointmentData; onCl
           <div className="flex items-start gap-4">
             <div className="flex-shrink-0 flex flex-col items-center justify-center w-16 h-16 rounded-2xl bg-white shadow-md">
               <span className={`text-2xl font-black leading-none ${cfg.text}`}>{d.getDate()}</span>
-              <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mt-0.5">{d.toLocaleDateString('en-US', { month: 'short' })}</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mt-0.5">
+                {d.toLocaleDateString('en-US', { month: 'short', timeZone: 'Africa/Nairobi' })}
+              </span>
               <span className="text-[9px] text-gray-300">{d.getFullYear()}</span>
             </div>
             <div className="flex-1 pt-1">
@@ -313,7 +341,9 @@ const AppointmentDetailModal = ({ appt, onClose }: { appt: AppointmentData; onCl
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10"><Clock className="h-4 w-4 text-primary" /></div>
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Time</p>
-              <p className="text-sm font-bold text-gray-800">{d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</p>
+              <p className="text-sm font-bold text-gray-800">
+                {d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'Africa/Nairobi' })}
+              </p>
             </div>
           </div>
           {appt.doctor_name && (
@@ -357,8 +387,7 @@ const AppointmentDetailModal = ({ appt, onClose }: { appt: AppointmentData; onCl
 
 const ManageModal = ({ appt, onClose, onUpdated }: { appt: AppointmentData; onClose: () => void; onUpdated: (updated: AppointmentData) => void }) => {
   const [newDate, setNewDate] = useState<Date>(() => {
-    const utcStr = appt.appointment_date;
-    return new Date(utcStr);
+    return parseKenyaDate(appt.appointment_date);
   });
   const [notes, setNotes] = useState(appt.notes || '');
   const [updating, setUpdating] = useState(false);
@@ -380,7 +409,7 @@ const ManageModal = ({ appt, onClose, onUpdated }: { appt: AppointmentData; onCl
     }
   };
 
-  const d = new Date(appt.appointment_date);
+  const d = parseKenyaDate(appt.appointment_date);
 
   return (
     <>
@@ -397,15 +426,19 @@ const ManageModal = ({ appt, onClose, onUpdated }: { appt: AppointmentData; onCl
             <p className="text-xs font-semibold uppercase tracking-widest text-white/60 mb-1">{isRequested ? '⏳ Pending Request' : 'Manage Appointment'}</p>
             <h2 className="text-xl font-black text-white">{appt.patient_name}</h2>
             <div className="flex items-center gap-3 mt-2 text-white/70 text-xs flex-wrap">
-              <span className="flex items-center gap-1"><CalendarDays className="h-3.5 w-3.5" />{d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
-              <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" />{d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</span>
+              <span className="flex items-center gap-1"><CalendarDays className="h-3.5 w-3.5" />
+                {d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'Africa/Nairobi' })}
+              </span>
+              <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" />
+                {d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'Africa/Nairobi' })}
+              </span>
               <StatusBadge status={appt.status} />
             </div>
           </div>
 
           {/* Scrollable body */}
           <div className="px-6 py-5 space-y-5 overflow-y-auto flex-1">
-
+            {/* ... rest of the modal content remains the same ... */}
             {isRequested && (
               <div className="flex items-start gap-2.5 rounded-2xl bg-amber-50 border border-amber-200 px-4 py-3">
                 <Bell className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
@@ -524,7 +557,14 @@ const Appointments = () => {
 
   useEffect(() => {
     appointmentsApi.list()
-      .then(setAppointments)
+      .then(data => {
+        // Parse dates to ensure they're correct
+        const parsedData = data.map((appt: any) => ({
+          ...appt,
+          // Keep the original date string as is - we'll parse it when displaying
+        }));
+        setAppointments(parsedData);
+      })
       .catch((e) => toast.error(e.message))
       .finally(() => setLoading(false));
   }, []);
@@ -628,7 +668,7 @@ const Appointments = () => {
         <div className="space-y-3">
           {filtered.length === 0 && <div className="py-16 text-center text-muted-foreground text-sm">No appointments found.</div>}
           {filtered.map((appt, i) => {
-            const d = new Date(appt.appointment_date);
+            const d = parseKenyaDate(appt.appointment_date);
             const effStatus = effectiveStatus(appt);
             const cfg = STATUS_CONFIG[effStatus as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.scheduled;
             return (
@@ -640,7 +680,9 @@ const Appointments = () => {
                 }`}>
                 <div className={`flex-shrink-0 flex flex-col items-center justify-center w-12 h-12 rounded-xl ${cfg.bg} border ${cfg.border}`}>
                   <span className={`text-base font-black leading-none ${cfg.text}`}>{d.getDate()}</span>
-                  <span className={`text-[9px] font-bold uppercase tracking-wider ${cfg.text} opacity-70`}>{d.toLocaleDateString('en-US', { month: 'short' })}</span>
+                  <span className={`text-[9px] font-bold uppercase tracking-wider ${cfg.text} opacity-70`}>
+                    {d.toLocaleDateString('en-US', { month: 'short', timeZone: 'Africa/Nairobi' })}
+                  </span>
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
@@ -652,7 +694,9 @@ const Appointments = () => {
                 <div className="text-right shrink-0 max-w-[90px] sm:max-w-none">
                   <div className="flex items-center gap-1 text-xs font-medium text-foreground justify-end">
                     <Clock className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                    <span className="truncate">{d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</span>
+                    <span className="truncate">
+                      {d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'Africa/Nairobi' })}
+                    </span>
                   </div>
                   {!isPatient && appt.doctor_name && (
                     <div className="hidden sm:flex items-center gap-1 text-[11px] text-muted-foreground mt-0.5 justify-end">
